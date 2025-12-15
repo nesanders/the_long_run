@@ -8,11 +8,13 @@
 
 ## Project Overview
 
-This project is a statistical experiment to estimate the distribution of **lifetime running miles** for the global population aged 16 to 80. 
+This project is a statistical experiment to estimate the distribution of **lifetime running miles** for the global population aged 16 to 80.
+    
+**Live Demo:** [nsanders.me](https://nsanders.me/the_long_run/) 
 
 Most running apps focus on daily or weekly metrics. This model zooms out to the scale of decades, attempting to answer: *How many miles does a human actually run in a lifetime?*
 
-The core output is a **Hierarchical Bayesian Gaussian Mixture Model** that segments the population into three latent groups ("Non-Runners," "Casual Runners," and "Core Runners") to predict lifetime volume accumulation.
+The core output is a **Hierarchical Bayesian Gaussian Mixture Model** that segments the population into four latent groups ("Non-Runners," "Casual Runners," "Recreational Runners," and "Dedicated Runners") to predict lifetime volume accumulation.
 
 ## The Experiment
 

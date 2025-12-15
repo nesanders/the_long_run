@@ -450,3 +450,160 @@ plt.grid(True, linestyle='--', alpha=0.5)
 plt.tight_layout()
 plt.savefig('output_file_consistency.png')
 print("Saved output_file_consistency.png")
+
+# --- Plot 5: Annual Volume Distributions (The Inputs) ---
+print("Generating Annual Distribution Plot...")
+plt.figure(figsize=(10, 6))
+
+x = np.linspace(0, 5000, 1000)
+
+# Casual (Mixed)
+dist_c = (np.exp(-(np.log(x) - MU_C_MIXED)**2 / (2 * SIG_C**2)) / (x * SIG_C * np.sqrt(2 * np.pi)))
+# Rec (Mixed)
+dist_r = (np.exp(-(np.log(x) - MU_R_MIXED)**2 / (2 * SIG_R**2)) / (x * SIG_R * np.sqrt(2 * np.pi)))
+# Ded (Mixed)
+dist_d = (np.exp(-(np.log(x) - MU_D_MIXED)**2 / (2 * SIG_D**2)) / (x * SIG_D * np.sqrt(2 * np.pi)))
+
+# Normalize peak for visualization comparison (or just show density)
+plt.plot(x, dist_c, color='#2ecc71', label='Casual Annual', linewidth=2)
+plt.fill_between(x, dist_c, alpha=0.3, color='#2ecc71')
+
+plt.plot(x, dist_r, color='#f1c40f', label='Rec Annual', linewidth=2)
+plt.fill_between(x, dist_r, alpha=0.3, color='#f1c40f')
+
+plt.plot(x, dist_d, color='#e74c3c', label='Dedicated Annual', linewidth=2)
+plt.fill_between(x, dist_d, alpha=0.3, color='#e74c3c')
+
+plt.xlim(0, 4000)
+plt.xlabel("Annual Mileage")
+plt.ylabel("Probability Density")
+plt.title("Figure 5: The inputs - Annual Volume Distributions")
+plt.legend()
+plt.tight_layout()
+plt.savefig('output_file_annual_dist.png')
+
+
+# --- Plot 6: Career Gantt Chart ---
+print("Generating Gantt Chart...")
+plt.figure(figsize=(12, 8))
+
+# Sample 50 ACTIVE runners (ignoring non-runners for the visualization)
+n_sample = 50
+active_indices = np.where(groups > 0)[0]
+if len(active_indices) > n_sample:
+    sample_indices = np.random.choice(active_indices, n_sample, replace=False)
+else:
+    sample_indices = active_indices
+
+# Sort by group then by start age
+# We want to group colors together
+sorted_sample = []
+for g in [1, 2, 3]: # Casual, Rec, Ded
+    g_idx = sample_indices[groups[sample_indices] == g]
+    # sub sort by duration
+    durs = stops_d[np.searchsorted(idx_d, g_idx)] if g == 3 else (stops_r[np.searchsorted(idx_r, g_idx)] if g == 2 else stops_c[np.searchsorted(idx_c, g_idx)])
+    # Actually simpler: just get their data from arrays if we mapped them.
+    # But simulation arrays are separate.
+    # Let's just iterate and build a list
+    pass
+
+# Re-build simple list for plotting
+plot_data = []
+for i in sample_indices:
+    g = groups[i]
+    if g == 0: continue # Skip non-runners
+    
+    # Find parameters
+    if g == 1:
+        color = '#2ecc71'
+        label = 'Casual'
+        # find in idx_c
+        pos = np.where(idx_c == i)[0][0]
+        start = starts_c[pos]
+        stop = stops_c[pos]
+    elif g == 2:
+        color = '#f1c40f'
+        label = 'Recreational'
+        pos = np.where(idx_r == i)[0][0]
+        start = starts_r[pos]
+        stop = stops_r[pos]
+    elif g == 3:
+        color = '#e74c3c'
+        label = 'Dedicated'
+        pos = np.where(idx_d == i)[0][0]
+        start = starts_d[pos]
+        stop = stops_d[pos]
+        
+    plot_data.append({
+        'id': i, 'group': g, 'color': color, 'start': start, 'stop': stop, 'duration': stop-start
+    })
+
+# Sort by group, then duration
+plot_data.sort(key=lambda x: (x['group'], x['duration']))
+
+y_pos = 0
+for p in plot_data:
+    plt.hlines(y=y_pos, xmin=p['start'], xmax=p['stop'], color=p['color'], linewidth=3)
+    # Optional: Dots for active years? 
+    # Too granular for 50 lines. Just the bars is good.
+    y_pos += 1
+
+plt.xlabel("Age")
+plt.yticks([])
+plt.ylabel("Individual Runners (Sample)")
+plt.title("Figure 6: Career Arcs (Sample of 50 Active Runners)")
+# Custom Legend
+from matplotlib.lines import Line2D
+custom_lines = [Line2D([0], [0], color='#2ecc71', lw=4),
+                Line2D([0], [0], color='#f1c40f', lw=4),
+                Line2D([0], [0], color='#e74c3c', lw=4)]
+plt.legend(custom_lines, ['Casual', 'Recreational', 'Dedicated'])
+plt.xlim(16, 80)
+plt.tight_layout()
+plt.savefig('output_file_gantt.png')
+
+
+# --- Plot 7: Persistence Scatter ---
+print("Generating Scatter Plot...")
+plt.figure(figsize=(10, 6))
+
+# Sub-sample for scatter to avoid clutter (e.g. 2000 points)
+n_scatter = 2000
+scatter_idx = np.random.choice(N_SIM, n_scatter, replace=False)
+
+x_vals = []
+y_vals = []
+colors = []
+
+for i in scatter_idx:
+    g = groups[i]
+    if g == 0: continue
+    
+    if g == 1: c = '#2ecc71'
+    elif g == 2: c = '#f1c40f'
+    elif g == 3: c = '#e74c3c'
+    else: c = 'grey'
+    
+    # Calculate Active Years (Logic from consistency block)
+    # We need to reach into the annual_miles array
+    miles = annual_miles[i]
+    active_years = np.sum(miles > 1) # Tolerance
+    total_miles = np.sum(miles)
+    
+    x_vals.append(active_years)
+    y_vals.append(total_miles)
+    colors.append(c)
+
+plt.scatter(x_vals, y_vals, c=colors, alpha=0.6, s=15, edgecolors='none')
+
+plt.xlabel("Total Active Years")
+plt.ylabel("Lifetime Miles")
+plt.title("Figure 7: The Persistence Multiplier")
+plt.yscale('linear') # Linear to show the "Curve" or lack thereof
+# Add trend lines? No, the color clusters tell the story.
+
+# Legend
+plt.legend(custom_lines, ['Casual', 'Recreational', 'Dedicated'], loc='upper left')
+plt.grid(True, linestyle='--', alpha=0.3)
+plt.tight_layout()
+plt.savefig('output_file_scatter.png')

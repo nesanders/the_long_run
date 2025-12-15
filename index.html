@@ -356,7 +356,7 @@
                         </ul>
                     </li>
                     <li><strong>Duration ($\Delta_{active}$):</strong> Modeled as a Gamma Distribution. Dedicated
-                        runners have a mean duration of ~30 years, while Casual runners average ~5 years.</li>
+                        runners have a mean duration of ~30 years, while Casual runners average ~10 years.</li>
                     <li><strong>Intermittency ($p_{active}$):</strong> A Bernoulli coin flip each year to determine if
                         the runner was active that specific year (ranging from 60% consistency for Casual to 95% for
                         Dedicated).</li>
@@ -415,12 +415,39 @@
 
                 <p><strong>Key Insight:</strong> The difference between limits is not pace, but persistence. A Dedicated
                     runner
-                    runner
                     averaging 10-minute miles will eventually build a statistical tower of volume that dwarfs a faster
                     runner
                     who quits after five years.</p>
 
-                <h2>5. Interactive Calculators</h2>
+                <h2>5. Inside the Black Box: Model Mechanics</h2>
+                <p>To demystify how the model builds these projections, we can peek under the hood at the three internal
+                    drivers:</p>
+
+                <h3>1. The "Base Engine": Annual Inputs</h3>
+                <figure>
+                    <img src="output_file_annual_dist.png" alt="Annual Volume Distributions">
+                    <figcaption>Figure 5: The Annual "Brick" distribution. Before accumulation, these are the
+                        probabilities of annual volume. Casual runners Center at ~450 miles/year, while Dedicated
+                        runners are an order of magnitude higher at ~2,200 miles/year.</figcaption>
+                </figure>
+
+                <h3>2. The "Career Arc": Lifecycles</h3>
+                <figure>
+                    <img src="output_file_gantt.png" alt="Career Gantt Chart of 50 Sample Runners">
+                    <figcaption>Figure 6: Lifecycle Gantt Chart (Sample of 50 Active Runners). The horizontal bars
+                        represent the active career of a runner. Notice the "Casual" (Green) runners often have short,
+                        5-10 year careers, while "Dedicated" (Red) runners maintain the habit for decades.</figcaption>
+                </figure>
+
+                <h3>3. The "Persistence Multiplier"</h3>
+                <figure>
+                    <img src="output_file_scatter.png" alt="Scatter Plot of Active Years vs Total Miles">
+                    <figcaption>Figure 7: Persistence vs Volume. Each dot is a simulated life. The relationship is
+                        remarkably linear. The "Dedicated" cluster (Red) isn't just higher because they run more per
+                        day, but because they run for more <em>years</em>.</figcaption>
+                </figure>
+
+                <h2>6. Interactive Calculators</h2>
 
                 <p>Based on the fitted parameters from the simulation (Casual $\approx$ 450 miles/yr, Dedicated
                     $\approx$ 2,200
@@ -491,7 +518,7 @@
                     <p id="percContext" style="text-align:center; font-size:1rem; color:#6b7280; margin-top:1rem;"></p>
                 </div>
 
-                <h2>6. Conclusion</h2>
+                <h2>7. Conclusion</h2>
 
                 <p>The difference between the Casual and Dedicated outcomes is driven less by pace than by persistence.
                     A
@@ -521,21 +548,21 @@
         // Cumulative Mileage Stats (Mean, StdDev) for Active Members of each group at various ages
         // Derived from PyMC/GMM Simulation
         const modelData = {
-            16: { c: [439, 182], r: [1178, 523], d: [1737, 335] },
-            20: { c: [794, 486], r: [2890, 1718], d: [6622, 2182] },
-            30: { c: [1293, 912], r: [6944, 3956], d: [19122, 7399] },
-            40: { c: [1977, 1260], r: [14835, 4891], d: [29283, 11429] },
-            50: { c: [2434, 1611], r: [22093, 5697], d: [39649, 11698] },
-            60: { c: [2558, 1811], r: [26499, 7678], d: [45474, 12889] },
-            70: { c: [2583, 1878], r: [28441, 9483], d: [47704, 14474] },
-            80: { c: [2586, 1893], r: [29055, 10404], d: [48351, 15438] },
+            16: { c: [442, 187], r: [1187, 532], d: [1736, 339] },
+            20: { c: [798, 492], r: [2911, 1734], d: [6618, 2183] },
+            30: { c: [1300, 919], r: [6994, 3988], d: [19046, 7493] },
+            40: { c: [1986, 1269], r: [14942, 4931], d: [29273, 11484] },
+            50: { c: [2445, 1620], r: [22252, 5745], d: [39704, 11718] },
+            60: { c: [2570, 1821], r: [26690, 7739], d: [45659, 12967] },
+            70: { c: [2595, 1890], r: [28647, 9557], d: [47950, 14588] },
+            80: { c: [2598, 1904], r: [29265, 10484], d: [48621, 15585] },
         };
         const WEIGHTS = { non: 0.6, casual: 0.25, rec: 0.1, ded: 0.05 };
         const BETA_GENDER = 0.41; // Log-scale shift derived from PyMC model
 
         // Generated from Python Script
         const FIG_STATS = {
-            age60: { casualMode: 1321, recMode: 27747, dedMode: 45165 }
+            age60: { casualMode: 1321, recMode: 27867, dedMode: 43483 }
         };
 
         function onPageLoad() {
