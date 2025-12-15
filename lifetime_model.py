@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.optimize import minimize
-from scipy.stats import lognorm, gaussian_kde
+import pymc as pm
+import arviz as az
+from scipy.stats import gaussian_kde
 from scipy.signal import find_peaks
 
 # ==========================================
@@ -10,187 +11,276 @@ from scipy.signal import find_peaks
 # ==========================================
 print("Initializing Data Anchors...")
 
-# Anchor 1: Casual Median
-# Source: Runner's World 2023 Survey & Shift to Strength study
-# "Most runners tend to clock up between 10 and 19 miles every week."
-# We target the midpoint: 15 miles/week.
-TARGET_MEDIAN_CASUAL = 15 * 52  # 780 miles/year
+# --- DATA SOURCES ---
+# 1. Runner's World / Historical Anchor: 15 miles/week
+#    Source: RW, general surveys.
+DATA_CASUAL_RW = 15 * 52  # 780 miles/year
 
-# Anchor 2: Core Median
-# Source: Running USA Global Runner Survey (Skews serious) & Academic Marathon Studies
-# "Slower marathon group avg 35km (21mi)/week" vs "Faster group avg 107km (66mi)/week"
-# "Sweet spot for serious recreational runners is 50-60 mpw"
-# We target a conservative Core median of 35 miles/week (1820 miles/year) 
-# to represent the broader "committed" demographic, not just elites.
-TARGET_MEDIAN_CORE = 35 * 52    # 1820 miles/year
+# 2. Strava Year in Sport 2024: 8.1 miles/week (Median)
+#    Source: Strava 2024 Report.
+DATA_CASUAL_STRAVA = 8.1 * 52  # ~421 miles/year
 
-# Anchor 3: The "Herron Limit"
-# Camille Herron: 100k lifetime miles at age 40.
-# Implied Max Annual Average over 24 years (16 to 40) = ~4166 miles/yr.
-# We treat this as a 4.5-sigma event (1 in ~300,000 for the core population).
-HERRON_ANNUAL_MAX = 4166 
+# 3. Core Median Anchor: 35 miles/week
+#    Source: Running USA, committed runner studies.
+DATA_CORE_RUNNING_USA = 35 * 52  # 1820 miles/year
 
-# Population Weights (Approximate from Activity Surveys)
-# 70% Inactive/Non-Runners
-# 24% Casual (Active but low volume)
-# 6% Core (High volume/Consistent)
+# 4. The "Herron Limit" (Max possible)
+#    Source: Camille Herron.
+HERRON_ANNUAL_MAX = 4166
+
+# Population Weights
 P_NON = 0.70
 P_CASUAL = 0.24
 P_CORE = 0.06
 
 # Simulation Config
 N_SIM = 50000
-AGE_RANGE = np.arange(16, 81)
 
 # ==========================================
-# 2. HIERARCHICAL OPTIMIZATION (Fitting)
+# 2. HIERARCHICAL BAYESIAN MODEL (PYMC)
 # ==========================================
-print(f"Running Optimization (Target Casual={TARGET_MEDIAN_CASUAL}, Core={TARGET_MEDIAN_CORE})...")
+# We treat the "Casual" and "Core" medians as latent variables.
+# We have "observations" for these medians from our data sources.
+print("Building PyMC Model...")
 
-def loss_function(params):
-    """
-    Calculates error between the model's parameters and real-world anchors.
-    params: [mu_casual, sigma_casual, mu_core, sigma_core] (Log-Scale)
-    """
-    mu_c, s_c, mu_s, s_s = params
+with pm.Model() as lifetime_model:
+    # --- Priors for Latent Medians (Log Scale) ---
+    # mu_casual: The "true" median of the casual population.
+    # We set a broad prior roughly between 300 and 1000 miles/year.
+    mu_casual_log = pm.Normal('mu_casual_log', mu=np.log(600), sigma=1.0)
     
-    # 1. Median Constraints
-    # LogNormal Median = exp(mu)
-    pred_med_c = np.exp(mu_c)
-    pred_med_s = np.exp(mu_s)
+    # mu_core: The "true" median of the core population.
+    # We set a broad prior roughly around 1500-2500 miles/year.
+    mu_core_log = pm.Normal('mu_core_log', mu=np.log(1800), sigma=1.0)
+
+    # --- Priors for Population Standard Deviations (Log Scale) ---
+    # Core runners are likely more consistent (lower sigma) than casuals.
+    sigma_casual = pm.HalfNormal('sigma_casual', sigma=0.5)
+    sigma_core = pm.HalfNormal('sigma_core', sigma=0.5)
+
+    # --- Likelihood (Data Observations) ---
+    # We observe estimated medians from different sources. 
+    # We model these observations as coming from the true latent median + some observation noise.
     
-    # Loss is proportional to percentage error
-    loss_med_c = ((pred_med_c - TARGET_MEDIAN_CASUAL) / 50)**2
-    loss_med_s = ((pred_med_s - TARGET_MEDIAN_CORE) / 50)**2
+    # Casual Observations
+    obs_casual_rw = pm.Normal('obs_casual_rw', mu=mu_casual_log, sigma=0.2, observed=np.log(DATA_CASUAL_RW))
+    obs_casual_strava = pm.Normal('obs_casual_strava', mu=mu_casual_log, sigma=0.2, observed=np.log(DATA_CASUAL_STRAVA))
     
-    # 2. The Herron Constraint (Tail Probability)
-    # Target Z-score for 4166 miles is 4.5 (Rare event)
+    # Core Observation
+    obs_core_rusa = pm.Normal('obs_core_rusa', mu=mu_core_log, sigma=0.2, observed=np.log(DATA_CORE_RUNNING_USA))
+
+    # --- Constraints (Herron Limit) ---
+    # Instead of a hard potential, we can treat this as a soft constraint or just a check.
+    # Here, we keep it as a potential to ensure the tail doesn't go too wild, 
+    # effectively saying "The 4.5 sigma event should be around HERRON_ANNUAL_MAX".
     target_z = 4.5
-    actual_z = (np.log(HERRON_ANNUAL_MAX) - mu_s) / s_s
-    loss_tail = (actual_z - target_z)**2
-    
-    # Total Loss
-    return loss_med_c + loss_med_s + 20 * loss_tail
-
-# Initial Guesses (Log scale)
-# ln(780) ~= 6.6, ln(1820) ~= 7.5
-init_params = [6.6, 0.8, 7.5, 0.4]
-
-# Run Optimizer
-res = minimize(loss_function, init_params, method='Nelder-Mead', tol=1e-4)
-best_params = res.x
-
-# Extract Optimized Parameters
-OPT_MU_C, OPT_SIG_C, OPT_MU_S, OPT_SIG_S = best_params
-
-print(f"Optimization Complete.")
-print(f"  Casual: Median={np.exp(OPT_MU_C):.0f} mi/yr ({np.exp(OPT_MU_C)/52:.1f} mpw), Sigma={OPT_SIG_C:.3f}")
-print(f"  Core:   Median={np.exp(OPT_MU_S):.0f} mi/yr ({np.exp(OPT_MU_S)/52:.1f} mpw), Sigma={OPT_SIG_S:.3f}")
+    projected_max = mu_core_log + target_z * sigma_core
+    # We want projected_max to be close to log(HERRON_ANNUAL_MAX)
+    pm.Potential('herron_constraint', pm.logp(pm.Normal.dist(mu=projected_max, sigma=0.2), np.log(HERRON_ANNUAL_MAX)))
 
 # ==========================================
-# 3. MONTE CARLO SIMULATION
+# 3. MCMC SAMPLING
+# ==========================================
+print("Running MCMC Sampling...")
+with lifetime_model:
+    # Reduced tuning/draws for speed as requested ("within a few seconds")
+    # NUTS is efficient enough that 1000/500 is often plenty for this simple geometry.
+    idata = pm.sample(draws=1000, tune=500, chains=2, cores=1, return_inferencedata=True, progressbar=False)
+
+summary = az.summary(idata, round_to=3)
+print("MCMC Complete. Parameter Summary:")
+print(summary)
+
+# Extract Means
+OPT_MU_C = summary.loc['mu_casual_log', 'mean']
+OPT_SIG_C = summary.loc['sigma_casual', 'mean']
+OPT_MU_S = summary.loc['mu_core_log', 'mean']
+OPT_SIG_S = summary.loc['sigma_core', 'mean']
+
+print(f"Posterior Means:")
+print(f"  Casual Median: {np.exp(OPT_MU_C):.0f} mi/yr (approx {np.exp(OPT_MU_C)/52:.1f} mpw)")
+print(f"  Core Median:   {np.exp(OPT_MU_S):.0f} mi/yr (approx {np.exp(OPT_MU_S)/52:.1f} mpw)")
+
+# ==========================================
+# 4. MONTE CARLO SIMULATION
 # ==========================================
 print(f"Simulating {N_SIM} Lifetimes...")
 np.random.seed(42)
 
-# Assign Groups
 groups = np.random.choice([0, 1, 2], size=N_SIM, p=[P_NON, P_CASUAL, P_CORE])
-annual_miles = np.zeros((N_SIM, 81)) # Matrix: Person x Age
+annual_miles = np.zeros((N_SIM, 81)) 
 
-# --- Process Casual Runners ---
+# Casuals
 idx_c = np.where(groups == 1)[0]
-# Casuals: Start randomly between 18-40. Duration average 10 years.
 start_c = np.random.normal(28, 6, len(idx_c))
 duration_c = np.random.gamma(2, 5, len(idx_c))
 stop_c = start_c + duration_c
 
-# --- Process Core Runners ---
+# Core
 idx_s = np.where(groups == 2)[0]
-# Core: Bimodal start (High school starts vs Late onset). Long duration.
 is_early = np.random.rand(len(idx_s)) < 0.45
 start_s = np.where(is_early, np.random.normal(17, 2, len(idx_s)), np.random.normal(32, 6, len(idx_s)))
-duration_s = np.random.gamma(12, 3, len(idx_s)) # Mean ~36 years
+duration_s = np.random.gamma(12, 3, len(idx_s))
 stop_s = start_s + duration_s
 
-# --- Fill Annual Miles ---
 for age in range(16, 81):
-    # Casual Activity (with intermittency noise)
+    # Casual
     active_mask_c = (age >= start_c) & (age <= stop_c)
-    intermittent_c = np.random.rand(len(idx_c)) < 0.65 # Casuals miss years
+    intermittent_c = np.random.rand(len(idx_c)) < 0.65 
     active_idx_c = idx_c[active_mask_c & intermittent_c]
-    
     if len(active_idx_c) > 0:
         annual_miles[active_idx_c, age] = np.random.lognormal(OPT_MU_C, OPT_SIG_C, len(active_idx_c))
         
-    # Core Activity (High consistency)
+    # Core
     active_mask_s = (age >= start_s) & (age <= stop_s)
-    intermittent_s = np.random.rand(len(idx_s)) < 0.90 # Core runners rarely miss years
+    intermittent_s = np.random.rand(len(idx_s)) < 0.90 
     active_idx_s = idx_s[active_mask_s & intermittent_s]
-    
     if len(active_idx_s) > 0:
         annual_miles[active_idx_s, age] = np.random.lognormal(OPT_MU_S, OPT_SIG_S, len(active_idx_s))
 
-# Calculate Cumulative Lifetime Miles
 cumulative = np.cumsum(annual_miles, axis=1)
 
 # ==========================================
-# 4. VISUALIZATION & OUTPUT
+# 5. EXPORT FOR JS
+# ==========================================
+print("\n--- JSON FOR INDEX.HTML ---")
+ages_to_export = [16, 20, 30, 40, 50, 60, 70, 80]
+print("const modelData = {")
+for age in ages_to_export:
+    # Casual Stats at this age
+    # Filter for those who have started by this age to avoid zero-bias if we want 'active' dist,
+    # but the JS model likely expects the distribution of the *group* (Casuals) including those who haven't started or have stopped?
+    # The JS uses logNormCDF, which implies > 0.
+    # We should look at the non-zero values for the group at that age?
+    # Or just the stats of the cumulative total for specific groups?
+    # Index.html uses: cdf_c = logNormCDF(miles, p.c[0], p.c[1])
+    # This implies p.c are parameters of the LogNormal distribution of cumulative miles.
+    # LogNormal params are mu and sigma (log-scale).
+    # But the JS `logNormCDF` function takes `mean_linear` and `std_linear` and converts them!
+    # "function logNormCDF(x, mean_linear, std_linear)... const mu_log = ..."
+    # So we need the Mean and Std of the linear data (cumulative miles).
+    
+    c_vals = cumulative[idx_c, age]
+    s_vals = cumulative[idx_s, age]
+    
+    # Filter > 0 to fit the LogNormal assumption of the JS widget
+    c_vals = c_vals[c_vals > 10]
+    s_vals = s_vals[s_vals > 10]
+    
+    if len(c_vals) == 0:
+        c_mean, c_std = 0, 0
+    else:
+        c_mean, c_std = np.mean(c_vals), np.std(c_vals)
+        
+    if len(s_vals) == 0:
+        s_mean, s_std = 0, 0
+    else:
+        s_mean, s_std = np.mean(s_vals), np.std(s_vals)
+
+    print(f"    {age}: {{ c: [{c_mean:.0f}, {c_std:.0f}], s: [{s_mean:.0f}, {s_std:.0f}] }},")
+print("};")
+print("---------------------------\n")
+
+# ==========================================
+# 6. VISUALIZATION
 # ==========================================
 print("Generating Visualizations...")
 sns.set_style("whitegrid")
-plt.rcParams['font.family'] = 'sans-serif'
 
-# --- Plot 1: CDF ---
+# CDF
 plt.figure(figsize=(10, 6))
 colors = ['#2ecc71', '#3498db', '#9b59b6', '#e74c3c']
 ages_to_plot = [30, 50, 70]
-
 for i, age in enumerate(ages_to_plot):
     data = cumulative[:, age]
     sorted_data = np.sort(data)
     yvals = np.arange(len(sorted_data)) / float(len(sorted_data))
     plt.plot(sorted_data, yvals, label=f'Age {age}', color=colors[i+1], linewidth=2.5)
 
-plt.text(100, 0.40, f"Non-Runners (~{int(P_NON*100)}%)\n(Zero Miles)", fontsize=10, 
-         bbox=dict(facecolor='white', alpha=0.9, edgecolor='#ccc'))
-
 plt.xscale('symlog', linthresh=1000)
 plt.xlim(-50, 150000)
 plt.ylim(0, 1.05)
-plt.xlabel("Lifetime Miles (Log Scale)", fontsize=12)
-plt.ylabel("Percentile", fontsize=12)
-plt.title("CDF of Lifetime Running Miles by Age", fontsize=14, fontweight='bold')
+plt.xlabel("Lifetime Miles (Log Scale)")
+plt.ylabel("Percentile")
+plt.title("CDF of Lifetime Running Miles by Age")
 plt.legend(loc="lower right")
 plt.tight_layout()
 plt.savefig('output_file_cdf_final.png')
-print("Saved CDF to output_file_cdf_final.png")
 
-# --- Plot 2: PDF (Age 60) ---
+# PDF (Age 60)
 plt.figure(figsize=(10, 6))
-age_60_miles = cumulative[:, 60]
-runners_60 = age_60_miles[age_60_miles > 100] # Filter >100 miles
 
-# KDE Plot
-kde = gaussian_kde(runners_60)
+# Extract data for Age 60
+all_miles_60 = cumulative[:, 60]
+casual_miles_60 = cumulative[idx_c, 60]
+core_miles_60 = cumulative[idx_s, 60]
+
+# Filter to active runners (> 100 miles) for visualization
+runners_60 = all_miles_60[all_miles_60 > 100]
+casual_runners_60 = casual_miles_60[casual_miles_60 > 100]
+core_runners_60 = core_miles_60[core_miles_60 > 100]
+
+# Define grid
 x_grid = np.linspace(0, 120000, 1000)
-density = kde(x_grid)
 
-plt.fill_between(x_grid, density, alpha=0.3, color='#3498db')
-plt.plot(x_grid, density, color='#3498db', linewidth=2)
+# 1. Statistics for weighting
+prop_casual_among_runners = len(casual_runners_60) / len(runners_60)
+prop_core_among_runners = len(core_runners_60) / len(runners_60)
 
-# Annotate Peaks
-peaks, _ = find_peaks(density, height=np.max(density)*0.1)
-peak_locs = x_grid[peaks]
-for peak in peak_locs:
-    plt.plot(peak, kde(peak), 'ro')
-    plt.text(peak, kde(peak)+0.000002, f"Peak: {int(peak/1000)}k", ha='center', fontweight='bold')
+# Initialize densities
+density_casual_scaled = np.zeros_like(x_grid)
+density_core_scaled = np.zeros_like(x_grid)
 
-plt.xlabel("Lifetime Miles", fontsize=12)
-plt.ylabel("Density", fontsize=12)
-plt.title("Distribution of Miles for Runners at Age 60", fontsize=14, fontweight='bold')
-plt.xlim(0, 120000)
+# Casual Component
+if len(casual_runners_60) > 10:
+    # Use a slightly tighter bandwidth for visualization if needed, but default is usually fine
+    kde_casual = gaussian_kde(casual_runners_60)
+    density_casual_scaled = kde_casual(x_grid) * prop_casual_among_runners
+    plt.fill_between(x_grid, density_casual_scaled, alpha=0.2, color='#2ecc71', label='Casual Component')
+    plt.plot(x_grid, density_casual_scaled, color='#2ecc71', linestyle='--')
+
+# Core Component
+if len(core_runners_60) > 10:
+    kde_core = gaussian_kde(core_runners_60)
+    density_core_scaled = kde_core(x_grid) * prop_core_among_runners
+    plt.fill_between(x_grid, density_core_scaled, alpha=0.2, color='#e74c3c', label='Core Component')
+    plt.plot(x_grid, density_core_scaled, color='#e74c3c', linestyle='--')
+
+# Total Density (Sum of components)
+density_total_sum = density_casual_scaled + density_core_scaled
+plt.plot(x_grid, density_total_sum, color='#34495e', linewidth=2.5, label='Total Density')
+
+# Annotate Mode of Casual Component
+if len(casual_runners_60) > 10:
+    idx_max_casual = np.argmax(density_casual_scaled)
+    peak_casual = x_grid[idx_max_casual]
+    val_casual = density_casual_scaled[idx_max_casual]
+    # Mark the peak
+    plt.plot(peak_casual, val_casual, 'o', color='#2ecc71')
+    plt.text(peak_casual, val_casual + 0.000002, f"Casual Mode\n{int(peak_casual):,} mi", 
+             ha='right', va='bottom', fontweight='bold', color='#27ae60', fontsize=10)
+
+# Annotate Mode of Core Component
+if len(core_runners_60) > 10:
+    idx_max_core = np.argmax(density_core_scaled)
+    peak_core = x_grid[idx_max_core]
+    val_core = density_core_scaled[idx_max_core]
+    # Mark the peak
+    plt.plot(peak_core, val_core, 'o', color='#c0392b')
+    plt.text(peak_core, val_core + 0.000002, f"Core Mode\n{int(peak_core):,} mi", 
+             ha='center', va='bottom', fontweight='bold', color='#c0392b', fontsize=10)
+
+# X-Axis Formatting
+import matplotlib.ticker as ticker
+ax = plt.gca()
+ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f'{int(x/1000)}k'))
+ax.xaxis.set_major_locator(ticker.MultipleLocator(20000))
+
+plt.xlabel("Lifetime Miles")
+plt.ylabel("Density (Cond. on Active)")
+plt.title("Mixture Distribution of Lifetime Miles (Age 60)")
+plt.legend()
 plt.tight_layout()
 plt.savefig('output_file_pdf_final.png')
-print("Saved PDF to output_file_pdf_final.png")
 
-print("Done.")
+print("Done. Saved outputs.")

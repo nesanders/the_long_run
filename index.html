@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
             --card-bg: #ffffff;
             --code-bg: #e2e8f0;
         }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             line-height: 1.8;
@@ -24,23 +26,27 @@
             margin: 0;
             padding: 0;
         }
+
         header {
             background: var(--primary);
             color: white;
             padding: 100px 20px;
             text-align: center;
         }
+
         header h1 {
             font-size: 3.5rem;
             margin-bottom: 10px;
             font-weight: 800;
             letter-spacing: -0.04em;
         }
+
         header .subtitle {
             font-size: 1.5rem;
             opacity: 0.8;
             font-weight: 300;
         }
+
         main {
             max-width: 850px;
             margin: -50px auto 50px;
@@ -50,6 +56,7 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
             position: relative;
         }
+
         h2 {
             color: var(--primary);
             margin-top: 4rem;
@@ -57,11 +64,13 @@
             padding-bottom: 0.5rem;
             border-bottom: 2px solid #e2e8f0;
         }
+
         h3 {
             color: #1e293b;
             margin-top: 2.5rem;
             font-size: 1.4rem;
         }
+
         h4 {
             margin-top: 1.5rem;
             color: var(--accent);
@@ -69,10 +78,12 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
+
         p {
             margin-bottom: 1.5rem;
             font-size: 1.125rem;
         }
+
         .math-block {
             overflow-x: auto;
             padding: 2rem;
@@ -83,6 +94,7 @@
             border: 1px solid #e2e8f0;
             font-size: 1.2rem;
         }
+
         .highlight-box {
             background-color: #eff6ff;
             border-left: 5px solid var(--accent);
@@ -92,27 +104,32 @@
             border-radius: 0 8px 8px 0;
             font-style: italic;
         }
+
         figure {
             margin: 4rem 0;
         }
+
         figure img {
             width: 100%;
             height: auto;
             border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             border: 1px solid #e2e8f0;
         }
+
         figcaption {
             text-align: center;
             font-size: 0.9rem;
             color: #64748b;
             margin-top: 1rem;
         }
+
         a {
             color: var(--accent);
             text-decoration: none;
             font-weight: 600;
         }
+
         a:hover {
             text-decoration: underline;
         }
@@ -125,16 +142,26 @@
             padding: 3rem;
             margin-top: 5rem;
         }
+
         .widget-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 2rem;
             margin-bottom: 2rem;
         }
+
         @media (max-width: 700px) {
-            .widget-grid { grid-template-columns: 1fr; }
-            main { padding: 30px; margin-top: 0; border-radius: 0; }
+            .widget-grid {
+                grid-template-columns: 1fr;
+            }
+
+            main {
+                padding: 30px;
+                margin-top: 0;
+                border-radius: 0;
+            }
         }
+
         label {
             display: block;
             font-weight: 700;
@@ -144,6 +171,7 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
+
         input[type="number"] {
             width: 100%;
             padding: 1rem;
@@ -152,6 +180,7 @@
             font-size: 1.1rem;
             box-sizing: border-box;
         }
+
         button {
             background-color: var(--accent);
             color: white;
@@ -164,9 +193,11 @@
             width: 100%;
             transition: background 0.2s;
         }
+
         button:hover {
             background-color: #2563eb;
         }
+
         .result-display {
             margin-top: 1.5rem;
             font-weight: 800;
@@ -179,6 +210,7 @@
             border-radius: 8px;
             border: 1px solid #e2e8f0;
         }
+
         .helper-text {
             display: block;
             font-size: 0.85rem;
@@ -189,264 +221,337 @@
         }
     </style>
 </head>
+
 <body>
 
-<header>
-    <h1>The Long Run</h1>
-    <div class="subtitle">A Hierarchical Bayesian Analysis of Lifetime Mileage</div>
-</header>
+    <header>
+        <h1>The Long Run</h1>
+        <div class="subtitle">A Hierarchical Bayesian Analysis of Lifetime Mileage</div>
+    </header>
 
-<main>
-    <p>In the era of the "Quantified Self," we are obsessed with the granular. Our watches buzz when we hit 10,000 steps; our apps generate heatmaps of our yearly activity; we chase weekly mileage targets with religious fervor. We are masters of the short term.</p>
+    <main>
+        <p>In the era of the "Quantified Self," we are obsessed with the granular. Our watches buzz when we hit 10,000
+            steps; our apps generate heatmaps of our yearly activity; we chase weekly mileage targets with religious
+            fervor. We are masters of the short term.</p>
 
-    <p>But running is fundamentally a long game. It is a habit that, for many, spans decades—from the high school track team to the local 5K, and eventually to the Sunday morning shuffle of retirement. Yet, we rarely zoom out to the widest possible lens: <strong>The Lifetime Total.</strong></p>
+        <p>But running is fundamentally a long game. It is a habit that, for many, spans decades—from the high school
+            track team to the local 5K, and eventually to the Sunday morning shuffle of retirement. Yet, we rarely zoom
+            out to the widest possible lens: <strong>The Lifetime Total.</strong></p>
 
-    <p>How many miles does a human being actually run in a lifetime? Is 10,000 miles a lot? Is 100,000 miles even physically possible for an amateur? And where do you stand in the global distribution of human movement?</p>
+        <p>How many miles does a human being actually run in a lifetime? Is 10,000 miles a lot? Is 100,000 miles even
+            physically possible for an amateur? And where do you stand in the global distribution of human movement?</p>
 
-    <p>The answer is surprisingly difficult to find. There is no central database that tracks every human from age 16 to 80. To answer this, I built a <strong>Hierarchical Bayesian Model</strong> to estimate these distributions. By synthesizing global polling data, club records, and survey statistics into a Gaussian Mixture Model, we can look past the noisy daily averages and see the clear compounding effect of consistency.</p>
+        <p>The answer is surprisingly difficult to find. There is no central database that tracks every human from age
+            16 to 80. To answer this, I built a <strong>Hierarchical Bayesian Model</strong> to estimate these
+            distributions. By synthesizing global polling data, club records, and survey statistics into a Gaussian
+            Mixture Model, we can look past the noisy daily averages and see the clear compounding effect of
+            consistency.</p>
 
-    <h2>1. The Conceptual Framework: The Three Tribes</h2>
+        <h2>1. The Conceptual Framework: The Three Tribes</h2>
 
-    <p>If you attempted to calculate the "average lifetime miles" of the global population, the number would be statistically meaningless. It would be dragged down by the inactive majority and pulled up by the ultra-endurance minority, resulting in a figure that represents nobody.</p>
+        <p>If you attempted to calculate the "average lifetime miles" of the global population, the number would be
+            statistically meaningless. It would be dragged down by the inactive majority and pulled up by the
+            ultra-endurance minority, resulting in a figure that represents nobody.</p>
 
-    <p>To model reality accurately, we must recognize that the population is not uniform. My model posits that humanity is divided into three latent groups—or "tribes"—each with distinct behavioral parameters:</p>
+        <p>To model reality accurately, we must recognize that the population is not uniform. My model posits that
+            humanity is divided into three latent groups—or "tribes"—each with distinct behavioral parameters:</p>
 
-    <ul>
-        <li><strong>The Non-Runners ($\pi_N \approx 70\%$):</strong> This group represents the structural zero. They may walk, cycle, or lift weights, but their contribution to "running mileage" is effectively nil. In the model, they are represented by a Dirac Delta function at zero.</li>
-        
-        <li><strong>The Casual Runners ($\pi_C \approx 24\%$):</strong> The vast majority of the "active" running population. These are the seasonal joggers, the "New Year's Resolution" crowd, and the recreational 5K participants. Their volume is generally low, centering around <strong>15 miles per week</strong> (~780/year), and their participation is intermittent.</li>
-        
-        <li><strong>The Core Runners ($\pi_D \approx 6\%$):</strong> The dedicated minority. These are the individuals for whom running is a "keystone habit." They average <strong>35 miles per week</strong> (~1,820/year) and, crucially, they maintain this consistency for decades.</li>
-    </ul>
+        <ul>
+            <li><strong>The Non-Runners ($\pi_N \approx 70\%$):</strong> This group represents the structural zero. They
+                may walk, cycle, or lift weights, but their contribution to "running mileage" is effectively nil. In the
+                model, they are represented by a Dirac Delta function at zero.</li>
 
-    <h2>2. The Mathematical Model</h2>
+            <li><strong>The Casual Runners ($\pi_C \approx 24\%$):</strong> The vast majority of the "active" running
+                population. These are the seasonal joggers, the "New Year's Resolution" crowd, and the recreational 5K
+                participants. Their volume is generally low, centering around <strong>11 miles per week</strong>
+                (~576/year), and their participation is intermittent.</li>
 
-    <p>To move from concept to calculation, we need a rigorous statistical framework. We model the probability density of Lifetime Miles ($M$) for an individual at age $t$ using a <strong>Gaussian Mixture Model (GMM)</strong>.</p>
+            <li><strong>The Core Runners ($\pi_D \approx 6\%$):</strong> The dedicated minority. These are the
+                individuals for whom running is a "keystone habit." They average <strong>35 miles per week</strong>
+                (~1,820/year) and, crucially, they maintain this consistency for decades.</li>
+        </ul>
 
-    <p>The posterior equation is defined as follows:</p>
+        <h2>2. The Mathematical Model</h2>
 
-    <div class="math-block">
-        $$ P(M | t) = \underbrace{\pi_{N} \delta(0)}_{\text{Non-Runners}} + \underbrace{\pi_{C} \mathcal{LN}(M; \mu_C(t), \sigma_C^2)}_{\text{Casual Runners}} + \underbrace{\pi_{D} \mathcal{LN}(M; \mu_D(t), \sigma_D^2)}_{\text{Core Runners}} $$
-    </div>
+        <p>To move from concept to calculation, we need a rigorous statistical framework. We model the probability
+            density of Lifetime Miles ($M$) for an individual at age $t$ using a <strong>Gaussian Mixture Model
+                (GMM)</strong>.</p>
 
-    <h3>Deconstructing the Parameters</h3>
-    <ul>
-        <li><strong>$\pi$ (Weights):</strong> These represent the probability of a random individual belonging to a specific group. Through the fitting process (detailed below), these settled at approx. 70%, 24%, and 6%.</li>
-        <li><strong>$\delta(0)$ (Dirac Delta):</strong> This handles the "Zero Mass." It ensures that the model accounts for the fact that a huge portion of the population has 0 lifetime miles.</li>
-        <li><strong>$\mathcal{LN}$ (Log-Normal Distribution):</strong> We use Log-Normal rather than Normal distributions because mileage is strictly positive and "heavy-tailed." A small number of people run <em>orders of magnitude</em> more than the median.</li>
-        <li><strong>$\mu(t)$ (Accumulation Function):</strong> This is the heart of the model. It represents the accumulated volume over time. For Core runners, this function grows linearly and aggressively; for Casual runners, it grows slowly and often plateaus as they age out of the sport.</li>
-    </ul>
+        <p>The posterior equation is defined as follows:</p>
 
-    <h2>3. Data Constraints & The "Herron Limit"</h2>
-
-    <p>A Bayesian model is only as good as its priors and constraints. To ensure this simulation reflects reality, I did not guess the parameters. I fitted them using a <strong>Hierarchical Loss Function</strong> against three specific "anchors" found in recent real-world data.</p>
-
-    <p>I programmed a Python simulation to generate 50,000 synthetic lifetimes, calculated the resulting population statistics, and optimized the parameters to minimize the error against these three sources:</p>
-
-    <h4>Anchor A: The Casual Median (Source: Runner's World & Strava)</h4>
-    <p>According to the <strong>Runner's World 2023 Survey</strong>, most recreational runners clock between 10 and 19 miles per week. This is corroborated by the <strong><a href="https://downloads.ctfassets.net/9olkiac82a1q/iU421iiO6Hky1MVvYThmz/cf2f510407b1b16be35d1c323722f47a/Strava-Global-Report-2023-en-US.pdf">2023 Strava Year in Sport Report</a></strong>, which notes that the median run distance is just under 4 miles, with an average frequency of roughly 3 runs per week for typical users.
-    <br><em>Model Constraint:</em> I penalized the model if the Casual group's median annual volume drifted far from <strong>780 miles/year</strong> (approx 15 mpw).</p>
-
-    <h4>Anchor B: The Core Volume (Source: Running USA & Academic Studies)</h4>
-    <p>Defining the "Core" runner requires looking at the dedicated amateur. The <strong><a href="https://www.runningusa.org/running-usa-news/running-usa-releases-2025-global-runner-survey-findings-with-largest-response-ever/">Running USA Global Runner Survey</a></strong> reveals a highly committed demographic that participates in an average of 11 events per year. Furthermore, academic studies on marathon training (e.g., <em><a href="https://www.dovepress.com/physiological-and-training-characteristics-of-recreational-marathon-ru-peer-reviewed-fulltext-article-OAJSM">Gordon et al., 2017</a></em>) identify a "sweet spot" for serious recreational runners at around <strong>35 to 50 miles per week</strong>.
-    <br><em>Model Constraint:</em> I tuned the Core group parameters ($\mu_D$) to center around <strong>1,820 miles/year</strong> (35 mpw). This separates the "Core" from the "Elite" (who might run 3,000+ miles) and the "Casual."</p>
-
-    <h4>Anchor C: The "Herron Limit" (Source: 100k Lifetime Miles Club)</h4>
-    <p>This is the most novel constraint in the model. In 2022, ultrarunner <strong>Camille Herron</strong> became the youngest person ever inducted into the <strong><a href="https://www.100klifetimemiles.com/p/runners-by-name.html">100,000 Lifetime Miles Club</a></strong> at age 40.</p>
-    <p>This provides a powerful statistical boundary (a "Zero Probability Condition"). It implies that the probability of a human reaching 100,000 miles <em>before</em> age 40 is vanishingly small. If my model predicted that even 0.01% of 40-year-olds had 100k miles, the model would be fundamentally broken.
-    <br><em>Model Constraint:</em> I applied a heavy penalty to the loss function if the tail of the distribution at Age 40 exceeded 100,000 miles. This "pinched" the variance ($\sigma_D$), ensuring the model respects the physiological limits of the human body.</p>
-
-    <h2>4. Visualizing the Results</h2>
-
-    <h3>The Cumulative Distribution (CDF)</h3>
-    <figure>
-        <img src="output_file_cdf_final.png" alt="CDF of Lifetime Miles Run by Age">
-        <figcaption>Figure 1: Percentile rankings by age. The vertical line at x=0 represents the Non-Runners. The curves then flatten, showing the massive gap required to reach the top percentiles.</figcaption>
-    </figure>
-
-    <p>The CDF in Figure 1 illustrates the "S-Curve" of running. The graph stays flat at y=0.70 because 70% of people are non-runners. To enter the top 10% of the global population at Age 70 (the Red line), you need approximately <strong>20,000 lifetime miles</strong>. To reach the top 1% (Elite Core), you need nearly <strong>90,000 miles</strong>—equivalent to running around the Earth 3.5 times.</p>
-
-    <h3>The Probability Density (PDF)</h3>
-    <figure>
-        <img src="output_file_pdf_final.png" alt="Distribution of Lifetime Miles for Runners at Age 60">
-        <figcaption>Figure 2: The distribution of miles for runners at Age 60. Note the bimodality (two peaks).</figcaption>
-    </figure>
-
-    <p>Figure 2 reveals the most fascinating insight: <strong>The Valley of Inconsistency.</strong>
-    <br>When we look at runners at Age 60, we see two distinct peaks. The left peak (~6,000 miles) represents the Casuals who ran for a few years and stopped. The right peak (~45,000 miles) represents the Core runners.</p>
-    
-    <p>Notice the dip in the middle. Very few people end up with 20,000 or 30,000 miles. Why? Because that volume is too high to reach by accident, but too low for a lifetime habit. Statistically, you either dabble or you commit. There is very little middle ground.</p>
-
-    <h2>5. Interactive Calculators</h2>
-
-    <p>Based on the fitted parameters from the simulation (Casual $\approx$ 780 miles/yr, Core $\approx$ 1,820 miles/yr), I have built these calculators to help you estimate your own horizon.</p>
-
-    <div class="widget-section">
-        <h3>1. Lifetime Estimator</h3>
-        <p>Estimate your total volume based on the years you have spent in each "Tribe."</p>
-        
-        <div class="widget-grid">
-            <div>
-                <label for="casualYears">Years as Casual Runner</label>
-                <span class="helper-text">~15 miles/week (e.g., 3 x 5 miles). Intermittent.</span>
-                <input type="number" id="casualYears" placeholder="e.g. 5" min="0">
-            </div>
-            <div>
-                <label for="coreYears">Years as Core Runner</label>
-                <span class="helper-text">~35 miles/week. Consistent year-round.</span>
-                <input type="number" id="coreYears" placeholder="e.g. 10" min="0">
-            </div>
+        <div class="math-block">
+            $$ P(M | t) = \underbrace{\pi_{N} \delta(0)}_{\text{Non-Runners}} + \underbrace{\pi_{C} \mathcal{LN}(M;
+            \mu_C(t), \sigma_C^2)}_{\text{Casual Runners}} + \underbrace{\pi_{D} \mathcal{LN}(M; \mu_D(t),
+            \sigma_D^2)}_{\text{Core Runners}} $$
         </div>
-        <button onclick="calculateTotalMiles()">Estimate Total Miles</button>
-        <div id="estResult" class="result-display">0 Miles</div>
-    </div>
 
-    <div class="widget-section">
-        <h3>2. Global Percentile Rank</h3>
-        <p>Compare your lifetime total against the global population for your age group.</p>
-        
-        <div class="widget-grid">
-            <div>
-                <label for="userAge">Current Age</label>
-                <span class="helper-text">Between 16 and 80</span>
-                <input type="number" id="userAge" placeholder="30" min="16" max="80">
+        <h3>Deconstructing the Parameters</h3>
+        <ul>
+            <li><strong>$\pi$ (Weights):</strong> These represent the probability of a random individual belonging to a
+                specific group. Through the fitting process (detailed below), these settled at approx. 70%, 24%, and 6%.
+            </li>
+            <li><strong>$\delta(0)$ (Dirac Delta):</strong> This handles the "Zero Mass." It ensures that the model
+                accounts for the fact that a huge portion of the population has 0 lifetime miles.</li>
+            <li><strong>$\mathcal{LN}$ (Log-Normal Distribution):</strong> We use Log-Normal rather than Normal
+                distributions because mileage is strictly positive and "heavy-tailed." A small number of people run
+                <em>orders of magnitude</em> more than the median.</li>
+            <li><strong>$\mu(t)$ (Accumulation Function):</strong> This is the heart of the model. It represents the
+                accumulated volume over time. For Core runners, this function grows linearly and aggressively; for
+                Casual runners, it grows slowly and often plateaus as they age out of the sport.</li>
+        </ul>
+
+        <h2>3. Data Constraints & The "Herron Limit"</h2>
+
+        <p>A Bayesian model is only as good as its priors and constraints. To ensure this simulation reflects reality, I
+            did not guess the parameters. I fitted them using a <strong>Hierarchical Loss Function</strong> against
+            three specific "anchors" found in recent real-world data.</p>
+
+        <p>I programmed a Python simulation to generate 50,000 synthetic lifetimes, calculated the resulting population
+            statistics, and optimized the parameters to minimize the error against these three sources:</p>
+
+        <h4>Anchor A: The Casual Median (Source: Runner's World & Strava)</h4>
+        <p>According to the <strong>Runner's World 2023 Survey</strong>, most recreational runners clock between 10 and
+            19 miles per week. However, the <strong><a
+                    href="https://downloads.ctfassets.net/9olkiac82a1q/iU421iiO6Hky1MVvYThmz/cf2f510407b1b16be35d1c323722f47a/Strava-Global-Report-2023-en-US.pdf">2023
+                    & 2024 Strava Year in Sport Reports</a></strong> note that the median run distance is just under 4
+            miles, with a median weekly distance around 8.1 miles/week for typical users.
+            <br><em>Model Constraint:</em> I penalized the model if the Casual group's median annual volume drifted far
+            from the combined estimate of roughly <strong>576 miles/year</strong> (approx 11 mpw).
+        </p>
+
+        <h4>Anchor B: The Core Volume (Source: Running USA & Academic Studies)</h4>
+        <p>Defining the "Core" runner requires looking at the dedicated amateur. The <strong><a
+                    href="https://www.runningusa.org/running-usa-news/running-usa-releases-2025-global-runner-survey-findings-with-largest-response-ever/">Running
+                    USA Global Runner Survey</a></strong> reveals a highly committed demographic that participates in an
+            average of 11 events per year. Furthermore, academic studies on marathon training (e.g., <em><a
+                    href="https://www.dovepress.com/physiological-and-training-characteristics-of-recreational-marathon-ru-peer-reviewed-fulltext-article-OAJSM">Gordon
+                    et al., 2017</a></em>) identify a "sweet spot" for serious recreational runners at around <strong>35
+                to 50 miles per week</strong>.
+            <br><em>Model Constraint:</em> I tuned the Core group parameters ($\mu_D$) to center around <strong>1,835
+                miles/year</strong> (35 mpw). This separates the "Core" from the "Elite" (who might run 3,000+ miles)
+            and the "Casual."
+        </p>
+
+        <h4>Anchor C: The "Herron Limit" (Source: 100k Lifetime Miles Club)</h4>
+        <p>This is the most novel constraint in the model. In 2022, ultrarunner <strong>Camille Herron</strong> became
+            the youngest person ever inducted into the <strong><a
+                    href="https://www.100klifetimemiles.com/p/runners-by-name.html">100,000 Lifetime Miles
+                    Club</a></strong> at age 40.</p>
+        <p>This provides a powerful statistical boundary (a "Zero Probability Condition"). It implies that the
+            probability of a human reaching 100,000 miles <em>before</em> age 40 is vanishingly small. If my model
+            predicted that even 0.01% of 40-year-olds had 100k miles, the model would be fundamentally broken.
+            <br><em>Model Constraint:</em> I applied a heavy penalty to the loss function if the tail of the
+            distribution at Age 40 exceeded 100,000 miles. This "pinched" the variance ($\sigma_D$), ensuring the model
+            respects the physiological limits of the human body.
+        </p>
+
+        <h2>4. Visualizing the Results</h2>
+
+        <h3>The Cumulative Distribution (CDF)</h3>
+        <figure>
+            <img src="output_file_cdf_final.png" alt="CDF of Lifetime Miles Run by Age">
+            <figcaption>Figure 1: Percentile rankings by age. The vertical line at x=0 represents the Non-Runners. The
+                curves then flatten, showing the massive gap required to reach the top percentiles.</figcaption>
+        </figure>
+
+        <p>The CDF in Figure 1 illustrates the "S-Curve" of running. The graph stays flat at y=0.70 because 70% of
+            people are non-runners. To enter the top 10% of the global population at Age 70 (the Red line), you need
+            approximately <strong>20,000 lifetime miles</strong>. To reach the top 1% (Elite Core), you need nearly
+            <strong>90,000 miles</strong>—equivalent to running around the Earth 3.5 times.</p>
+
+        <h3>The Probability Density (PDF)</h3>
+        <figure>
+            <img src="output_file_pdf_final.png" alt="Distribution of Lifetime Miles for Runners at Age 60">
+            <figcaption>Figure 2: The distribution of miles for runners at Age 60. Note the bimodality (two peaks).
+            </figcaption>
+        </figure>
+
+        <p>Figure 2 reveals the most fascinating insight: <strong>The Valley of Inconsistency.</strong>
+            <br>When we look at runners at Age 60, we see two distinct peaks. The left peak (~6,000 miles) represents
+            the Casuals who ran for a few years and stopped. The right peak (~45,000 miles) represents the Core runners.
+        </p>
+
+        <p>Notice the dip in the middle. Very few people end up with 20,000 or 30,000 miles. Why? Because that volume is
+            too high to reach by accident, but too low for a lifetime habit. Statistically, you either dabble or you
+            commit. There is very little middle ground.</p>
+
+        <h2>5. Interactive Calculators</h2>
+
+        <p>Based on the fitted parameters from the simulation (Casual $\approx$ 576 miles/yr, Core $\approx$ 1,835
+            miles/yr), I have built these calculators to help you estimate your own horizon.</p>
+
+        <div class="widget-section">
+            <h3>1. Lifetime Estimator</h3>
+            <p>Estimate your total volume based on the years you have spent in each "Tribe."</p>
+
+            <div class="widget-grid">
+                <div>
+                    <label for="casualYears">Years as Casual Runner</label>
+                    <span class="helper-text">~11 miles/week (e.g., 2-3 short runs). Intermittent.</span>
+                    <input type="number" id="casualYears" placeholder="e.g. 5" min="0">
+                </div>
+                <div>
+                    <label for="coreYears">Years as Core Runner</label>
+                    <span class="helper-text">~35 miles/week. Consistent year-round.</span>
+                    <input type="number" id="coreYears" placeholder="e.g. 10" min="0">
+                </div>
             </div>
-            <div>
-                <label for="userMiles">Total Lifetime Miles</label>
-                <span class="helper-text">Your estimated total</span>
-                <input type="number" id="userMiles" placeholder="1000" min="0">
-            </div>
+            <button onclick="calculateTotalMiles()">Estimate Total Miles</button>
+            <div id="estResult" class="result-display">0 Miles</div>
         </div>
-        <button onclick="calculatePercentile()">Calculate Percentile</button>
-        <div id="percResult" class="result-display">-- th Percentile</div>
-        <p id="percContext" style="text-align:center; font-size:1rem; color:#6b7280; margin-top:1rem;"></p>
-    </div>
 
-    <h2>6. Conclusion: The Compounding Effect</h2>
+        <div class="widget-section">
+            <h3>2. Global Percentile Rank</h3>
+            <p>Compare your lifetime total against the global population for your age group.</p>
 
-    <p>The "Long Run" perspective offers a refreshing antidote to daily performance anxiety. When you view running through the lens of a lifetime, speed becomes secondary to longevity.</p>
+            <div class="widget-grid">
+                <div>
+                    <label for="userAge">Current Age</label>
+                    <span class="helper-text">Between 16 and 80</span>
+                    <input type="number" id="userAge" placeholder="30" min="16" max="80">
+                </div>
+                <div>
+                    <label for="userMiles">Total Lifetime Miles</label>
+                    <span class="helper-text">Your estimated total</span>
+                    <input type="number" id="userMiles" placeholder="1000" min="0">
+                </div>
+            </div>
+            <button onclick="calculatePercentile()">Calculate Percentile</button>
+            <div id="percResult" class="result-display">-- th Percentile</div>
+            <p id="percContext" style="text-align:center; font-size:1rem; color:#6b7280; margin-top:1rem;"></p>
+        </div>
 
-    <p>The difference between the Casual and Core peaks in the data is not pace; it is persistence. A Core runner averaging 10-minute miles will eventually build a "statistical tower" of volume that dwarfs a faster runner who quits after five years.</p>
-    
-    <p>If you are struggling with a slow run or a lack of motivation, remember the data. Every mile deposits into an account that compounds over decades. You are not just running for today's workout; you are deciding which tribe you belong to.</p>
+        <h2>6. Conclusion: The Compounding Effect</h2>
 
-</main>
+        <p>The "Long Run" perspective offers a refreshing antidote to daily performance anxiety. When you view running
+            through the lens of a lifetime, speed becomes secondary to longevity.</p>
 
-<script>
-    // --- JS LOGIC FOR CALCULATORS ---
-    
-    // Fitted Parameters from Hierarchical Optimization
-    // Updated with Casual=780/yr and Core=1820/yr targets
-    // Structure: Age: { c: [Mean, Std], s: [Mean, Std] }
-    // These match the Python simulation results for the fitted model
-    const modelData = {
-        16: { c: [950, 800], s: [1600, 400] },
-        20: { c: [2400, 1900], s: [4800, 2300] },
-        30: { c: [4000, 3100], s: [16500, 7500] },
-        40: { c: [5500, 4100], s: [24000, 12000] },
-        50: { c: [6500, 4800], s: [36000, 11500] },
-        60: { c: [6800, 5200], s: [45000, 12000] },
-        70: { c: [6900, 5300], s: [50000, 14000] },
-        80: { c: [7000, 5400], s: [52000, 15000] }
-    };
-    
-    // Fitted Weights
-    const W_NON = 0.70;    // Non-runners
-    const W_CASUAL = 0.24; // Casual runners
-    const W_CORE = 0.06;   // Core runners
+        <p>The difference between the Casual and Core peaks in the data is not pace; it is persistence. A Core runner
+            averaging 10-minute miles will eventually build a "statistical tower" of volume that dwarfs a faster runner
+            who quits after five years.</p>
 
-    // Math Helpers
-    function erf(x) {
-        var m = 1.00, s = 1.00, sum = x * 1.0;
-        for (var i = 1; i < 50; i++) {
-            m *= i; s *= -1; sum += (s * Math.pow(x, 2 * i + 1)) / (m * (2 * i + 1));
-        }
-        return 2 * sum / Math.sqrt(Math.PI);
-    }
+        <p>If you are struggling with a slow run or a lack of motivation, remember the data. Every mile deposits into an
+            account that compounds over decades. You are not just running for today's workout; you are deciding which
+            tribe you belong to.</p>
 
-    function normCDF(x, mean, std) {
-        if (std === 0) return x < mean ? 0 : 1;
-        return 0.5 * (1 + erf((x - mean) / (Math.sqrt(2) * std)));
-    }
+    </main>
 
-    function logNormCDF(x, mean_linear, std_linear) {
-        if (x <= 0) return 0;
-        // Convert linear mean/std to log-space mu/sigma
-        const v = Math.pow(std_linear, 2);
-        const m2 = Math.pow(mean_linear, 2);
-        const mu_log = Math.log(m2 / Math.sqrt(v + m2));
-        const sigma_log = Math.sqrt(Math.log(1 + (v / m2)));
-        
-        return normCDF(Math.log(x), mu_log, sigma_log);
-    }
+    <script>
+        // --- JS LOGIC FOR CALCULATORS ---
 
-    function lerp(start, end, t) {
-        return start * (1 - t) + end * t;
-    }
-
-    function getParams(age) {
-        age = Math.max(16, Math.min(80, age));
-        const brackets = [16, 20, 30, 40, 50, 60, 70, 80];
-        let lower = 16, upper = 80;
-        
-        for (let i = 0; i < brackets.length - 1; i++) {
-            if (age >= brackets[i] && age <= brackets[i+1]) {
-                lower = brackets[i];
-                upper = brackets[i+1];
-                break;
-            }
-        }
-
-        if (lower === upper) return modelData[lower];
-
-        const t = (age - lower) / (upper - lower);
-        return {
-            c: [lerp(modelData[lower].c[0], modelData[upper].c[0], t), lerp(modelData[lower].c[1], modelData[upper].c[1], t)],
-            s: [lerp(modelData[lower].s[0], modelData[upper].s[0], t), lerp(modelData[lower].s[1], modelData[upper].s[1], t)]
+        // Fitted Parameters from Hierarchical Optimization
+        // Updated with Casual=780/yr and Core=1820/yr targets
+        // Structure: Age: { c: [Mean, Std], s: [Mean, Std] }
+        // These match the Python simulation results for the fitted model
+        const modelData = {
+            16: { c: [608, 233], s: [1849, 337] },
+            20: { c: [1250, 759], s: [5967, 2544] },
+            30: { c: [2032, 1405], s: [18117, 7799] },
+            40: { c: [3167, 2001], s: [26985, 13283] },
+            50: { c: [3933, 2599], s: [40097, 13720] },
+            60: { c: [4136, 2927], s: [50631, 13335] },
+            70: { c: [4176, 3041], s: [56685, 14456] },
+            80: { c: [4183, 3072], s: [59191, 16312] },
         };
-    }
 
-    // Logic
-    function calculateTotalMiles() {
-        const c = parseFloat(document.getElementById('casualYears').value) || 0;
-        const s = parseFloat(document.getElementById('coreYears').value) || 0;
-        // Derived means from the optimization: Casual=780/yr, Core=1820/yr
-        const total = (c * 780) + (s * 1820);
-        
-        const el = document.getElementById('estResult');
-        el.innerText = total.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " Miles";
-    }
+        // Fitted Weights
+        const W_NON = 0.70;    // Non-runners
+        const W_CASUAL = 0.24; // Casual runners
+        const W_CORE = 0.06;   // Core runners
 
-    function calculatePercentile() {
-        const age = parseFloat(document.getElementById('userAge').value);
-        const miles = parseFloat(document.getElementById('userMiles').value);
-        
-        if (!age || isNaN(miles)) return;
+        // Math Helpers
+        function erf(x) {
+            var m = 1.00, s = 1.00, sum = x * 1.0;
+            for (var i = 1; i < 50; i++) {
+                m *= i; s *= -1; sum += (s * Math.pow(x, 2 * i + 1)) / (m * (2 * i + 1));
+            }
+            return 2 * sum / Math.sqrt(Math.PI);
+        }
 
-        const p = getParams(age);
-        
-        // Calculate CDF for each group
-        const cdf_n = (miles > 0) ? 1.0 : 0.0;
-        const cdf_c = logNormCDF(miles, p.c[0], p.c[1]);
-        const cdf_s = logNormCDF(miles, p.s[0], p.s[1]);
-        
-        // Weighted Sum (The Mixture)
-        const totalProb = (W_NON * cdf_n) + (W_CASUAL * cdf_c) + (W_CORE * cdf_s);
-        const perc = (totalProb * 100);
-        
-        let percString = perc.toFixed(1);
-        if (perc > 99.9) percString = perc.toFixed(4);
-        
-        document.getElementById('percResult').innerText = percString + "th Percentile";
-        
-        let ctx = "";
-        if (perc < 70) ctx = "You are in the Non-Runner range (Global Majority).";
-        else if (perc < 94) ctx = "You are in the Casual Runner tier, ahead of the global majority.";
-        else ctx = "You are in the Core Runner tier, an elite category of consistency.";
-        
-        document.getElementById('percContext').innerText = ctx;
-    }
-</script>
+        function normCDF(x, mean, std) {
+            if (std === 0) return x < mean ? 0 : 1;
+            return 0.5 * (1 + erf((x - mean) / (Math.sqrt(2) * std)));
+        }
+
+        function logNormCDF(x, mean_linear, std_linear) {
+            if (x <= 0) return 0;
+            // Convert linear mean/std to log-space mu/sigma
+            const v = Math.pow(std_linear, 2);
+            const m2 = Math.pow(mean_linear, 2);
+            const mu_log = Math.log(m2 / Math.sqrt(v + m2));
+            const sigma_log = Math.sqrt(Math.log(1 + (v / m2)));
+
+            return normCDF(Math.log(x), mu_log, sigma_log);
+        }
+
+        function lerp(start, end, t) {
+            return start * (1 - t) + end * t;
+        }
+
+        function getParams(age) {
+            age = Math.max(16, Math.min(80, age));
+            const brackets = [16, 20, 30, 40, 50, 60, 70, 80];
+            let lower = 16, upper = 80;
+
+            for (let i = 0; i < brackets.length - 1; i++) {
+                if (age >= brackets[i] && age <= brackets[i + 1]) {
+                    lower = brackets[i];
+                    upper = brackets[i + 1];
+                    break;
+                }
+            }
+
+            if (lower === upper) return modelData[lower];
+
+            const t = (age - lower) / (upper - lower);
+            return {
+                c: [lerp(modelData[lower].c[0], modelData[upper].c[0], t), lerp(modelData[lower].c[1], modelData[upper].c[1], t)],
+                s: [lerp(modelData[lower].s[0], modelData[upper].s[0], t), lerp(modelData[lower].s[1], modelData[upper].s[1], t)]
+            };
+        }
+
+        // Logic
+        function calculateTotalMiles() {
+            const c = parseFloat(document.getElementById('casualYears').value) || 0;
+            const s = parseFloat(document.getElementById('coreYears').value) || 0;
+            // Derived means from the optimization: Casual=576/yr, Core=1835/yr
+            const total = (c * 576) + (s * 1835);
+
+            const el = document.getElementById('estResult');
+            el.innerText = total.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " Miles";
+        }
+
+        function calculatePercentile() {
+            const age = parseFloat(document.getElementById('userAge').value);
+            const miles = parseFloat(document.getElementById('userMiles').value);
+
+            if (!age || isNaN(miles)) return;
+
+            const p = getParams(age);
+
+            // Calculate CDF for each group
+            const cdf_n = (miles > 0) ? 1.0 : 0.0;
+            const cdf_c = logNormCDF(miles, p.c[0], p.c[1]);
+            const cdf_s = logNormCDF(miles, p.s[0], p.s[1]);
+
+            // Weighted Sum (The Mixture)
+            const totalProb = (W_NON * cdf_n) + (W_CASUAL * cdf_c) + (W_CORE * cdf_s);
+            const perc = (totalProb * 100);
+
+            let percString = perc.toFixed(1);
+            if (perc > 99.9) percString = perc.toFixed(4);
+
+            document.getElementById('percResult').innerText = percString + "th Percentile";
+
+            let ctx = "";
+            if (perc < 70) ctx = "You are in the Non-Runner range (Global Majority).";
+            else if (perc < 94) ctx = "You are in the Casual Runner tier, ahead of the global majority.";
+            else ctx = "You are in the Core Runner tier, an elite category of consistency.";
+
+            document.getElementById('percContext').innerText = ctx;
+        }
+    </script>
 
 </body>
+
 </html>
