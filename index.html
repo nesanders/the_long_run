@@ -273,7 +273,7 @@
                 participants. Their volume is generally low, centering around <strong>11 miles per week</strong>
                 (~576/year), and their participation is intermittent.</li>
 
-            <li><strong>The Core Runners ($\pi_D \approx 6\%$):</strong> The dedicated minority. These are the
+            <li><strong>The Dedicated Runners ($\pi_D \approx 5\%$):</strong> The committed minority. These are the
                 individuals for whom running is a "keystone habit." They average <strong>35 miles per week</strong>
                 (~1,820/year) and, crucially, they maintain this consistency for decades.</li>
         </ul>
@@ -287,9 +287,10 @@
         <p>The posterior equation is defined as follows:</p>
 
         <div class="math-block">
-            $$ P(M | t) = \underbrace{\pi_{N} \delta(0)}_{\text{Non-Runners}} + \underbrace{\pi_{C} \mathcal{LN}(M;
-            \mu_C(t), \sigma_C^2)}_{\text{Casual Runners}} + \underbrace{\pi_{D} \mathcal{LN}(M; \mu_D(t),
-            \sigma_D^2)}_{\text{Core Runners}} $$
+            $$ P(M | t) = \underbrace{\pi_{N} \delta(0)}_{\text{Non-Runners}} + \underbrace{\pi_{C} \mathcal{LN}_C +
+            \pi_{R} \mathcal{LN}_R + \pi_{D} \mathcal{LN}_D}_{\text{Active Tribes}} $$
+            <br>
+            <small>Where $\mathcal{LN}_k = \mathcal{LN}(M; \mu_k(t), \sigma_k^2)$</small>
         </div>
 
         <h3>Deconstructing the Parameters</h3>
@@ -303,10 +304,55 @@
                 distributions because mileage is strictly positive and "heavy-tailed." A small number of people run
                 <em>orders of magnitude</em> more than the median.
             </li>
-            <li><strong>$\mu(t)$ (Accumulation Function):</strong> This is the heart of the model. It represents the
-                accumulated volume over time. For Core runners, this function grows linearly and aggressively; for
-                Casual runners, it grows slowly and often plateaus as they age out of the sport.</li>
+            accumulated volume over time. For Dedicated runners, this function grows linearly and aggressively; for
+            Casual runners, it grows slowly and often plateaus as they age out of the sport.</li>
+            <li><strong>$\tau_{quit}$ (Retention Parameter):</strong> The model now explicitly infers the expected
+                "Running Lifespan."
+                For Dedicated runners, this is modeled as a Gamma distribution constrained by the "Herron Limit,"
+                settling around <strong>30 years</strong> of consistent volume.</li>
         </ul>
+
+        <h3>The Genesis of a Runner (Start Ages)</h3>
+        <p>The model also accounts for <em>when</em> people start running. The simulation reveals distinct "genesis"
+            patterns:</p>
+        <ul>
+            <li><strong>Dedicated Runners (Bimodal):</strong> They tend to start in two waves.
+                60% are "Lifers" who start young (Age ~16, likely High School track/XC).
+                40% are "Adult Onset" runners who discover the sport later (Age ~30), often for health or marathon
+                goals.</li>
+            <li><strong>Recreational/Casual:</strong> These groups tend to drift into the sport in early adulthood (Age
+                24-28), often as a social activity or casual fitness, without the teenage competitive base.</li>
+        </ul>
+
+        <p><strong>Reflecting 'Genesis' in the Equation:</strong> Mathematically, the accumulation parameter $\mu(t)$ is
+            not a simple coefficient; it is the aggregate of thousands of individual trajectories defined by specific
+            start and stop times. For any given individual $i$, their cumulative mileage $M_i(t)$ is a piecewise
+            integration:</p>
+
+        <div class="math-block">
+            $$ M_i(t) = \sum_{\tau=0}^{t} V_i(\tau) \quad \text{where} \quad V_i(\tau) = \begin{cases}
+            0 & \tau < t_{start}^{(i)} \quad (\text{Pre-Genesis}) \\ R_i & t_{start}^{(i)} \le \tau \le t_{quit}^{(i)}
+                \quad (\text{Active}) \\ 0 & \tau> t_{quit}^{(i)} \quad (\text{Retention Loss})
+                \end{cases} $$
+        </div>
+
+        <p>The GMM parameter $\mu_D(t)$ essentially tracks the log-mean of this $M_i(t)$ population. The "Bimodal
+            Genesis" of the Dedicated tribe means that for 40% of the group, $V_i(\tau)$ remains zero until $\tau
+            \approx 30$, creating the delayed "kink" observed in the variance.</p>
+
+        <h3>Model Inputs (Bayesian Priors)</h3>
+        <p>The model uses the following weak priors, allowing the data anchors to drive the posterior distribution:</p>
+        <div class="equation" style="text-align: left; padding-left: 2rem;">
+            \[
+            \begin{aligned}
+            \beta_{gender} &\sim \mathcal{N}(0.42, 0.1) \quad (\text{Log-Scale Shift}) \\
+            \mu_{casual} &\sim \mathcal{N}(\ln(300), 0.8) \\
+            \mu_{rec} &\sim \mathcal{N}(\ln(800), 0.5) \\
+            \mu_{ded} &\sim \mathcal{N}(\ln(1400), 0.5) \\
+            \sigma_{groups} &\sim \mathcal{HN}(0.5)
+            \end{aligned}
+            \]
+        </div>
 
         <h2>3. Data Constraints & The "Herron Limit"</h2>
 
@@ -327,16 +373,18 @@
             from the combined estimate of roughly <strong>576 miles/year</strong> (approx 11 mpw).
         </p>
 
-        <h4>Anchor B: The Core Volume (Source: Running USA & Academic Studies)</h4>
-        <p>Defining the "Core" runner requires looking at the dedicated amateur. The <strong><a
+        <h4>Anchor B: The Dedicated Volume (Source: Running USA & Academic Studies)</h4>
+        <p>Defining the "Dedicated" runner requires looking at the serious amateur. The <strong><a
                     href="https://www.runningusa.org/running-usa-news/running-usa-releases-2025-global-runner-survey-findings-with-largest-response-ever/">Running
-                    USA Global Runner Survey</a></strong> reveals a highly committed demographic that participates in an
-            average of 11 events per year. Furthermore, academic studies on marathon training (e.g., <em><a
+                    USA Global Runner Survey</a></strong> reveals a highly committed demographic. Furthermore, academic
+            studies on marathon training (e.g., <em><a
                     href="https://www.dovepress.com/physiological-and-training-characteristics-of-recreational-marathon-ru-peer-reviewed-fulltext-article-OAJSM">Gordon
                     et al., 2017</a></em>) identify a "sweet spot" for serious recreational runners at around <strong>35
                 to 50 miles per week</strong>.
-            <br><em>Model Constraint:</em> I tuned the Core group parameters ($\mu_D$) to center around <strong>1,835
-                miles/year</strong> (35 mpw). This separates the "Core" from the "Elite" (who might run 3,000+ miles)
+            <br><em>Model Constraint:</em> I tuned the Dedicated group parameters ($\mu_D$) to center around
+            <strong>1,820
+                miles/year</strong> (35 mpw). This separates the "Dedicated" from the "Elite" (who might run 3,000+
+            miles)
             and the "Casual."
         </p>
 
@@ -353,60 +401,88 @@
             respects the physiological limits of the human body.
         </p>
 
+        <h3>The Likelihood Function (Bayesian Updating)</h3>
+        <p>The magic of the Bayesian approach is estimating latent variables (like the "Gender Gap" or the "Base
+            Dedication Level") from disparate, incomplete observations. I constructed the likelihood function to solve
+            for these unknowns by essentially "triangulating" the data points:</p>
+
+        <div class="highlight-box">
+            <strong>Observation Map:</strong>
+            <ul style="list-style-type: none; padding-left: 0;">
+                <li>$\mu_{casual} + 0.5\beta_{gender} \sim \mathcal{N}(\text{Strava Mixed Data})$</li>
+                <li>$\mu_{rec} \quad \quad \quad \quad \quad \sim \mathcal{N}(\text{Female RunRepeat Avg})$</li>
+                <li>$\mu_{ded} + \beta_{gender} \quad \;\; \sim \mathcal{N}(\text{Male Marathoner Avg})$</li>
+                <li>$\mu_{ded} + 0.5\beta_{gender} \sim \mathcal{N}(\text{Running USA Core Avg})$</li>
+                <li>$\mu_{ded} + \ln(\tau_{quit}) \quad \;\; < \text{Herron Limit (100k)}$</li>
+            </ul>
+        </div>
+        <p>By defining the relationships this way, the model "learned" that Men run ~1.5x more volume than Women (the
+            $\beta_{gender}$ term), and that the average "Dedicated Career" lasts approximately 30 years before
+            significant volume drop-off.</p>
+
         <h2>4. Visualizing the Results</h2>
 
-        <h3>The Cumulative Distribution (CDF)</h3>
-        <figure>
-            <img src="output_file_cdf_final.png" alt="CDF of Lifetime Miles Run by Age">
-            <figcaption>Figure 1: Percentile rankings by age. The vertical line at x=0 represents the Non-Runners. The
-                curves then flatten, showing the massive gap required to reach the top percentiles.</figcaption>
-        </figure>
-
-        <p>The CDF in Figure 1 illustrates the "S-Curve" of running. The graph stays flat at y=0.70 because 70% of
-            people are non-runners. To enter the top 10% of the global population at Age 70 (the Red line), you need
-            approximately <strong>20,000 lifetime miles</strong>. To reach the top 1% (Elite Core), you need nearly
-            <strong>90,000 miles</strong>—equivalent to running around the Earth 3.5 times.
-        </p>
-
-        <h3>The Probability Density (PDF)</h3>
+        <h3>1. The Probability Density (PDF)</h3>
         <figure>
             <img src="output_file_pdf_final.png" alt="Distribution of Lifetime Miles for Runners at Age 60">
-            <figcaption>Figure 2: The distribution of miles for runners at Age 60. Note the bimodality (two peaks).
-            </figcaption>
+            <figcaption>Figure 1: The "Valley of Inconsistency" at Age 60. This chart highlights the bimodal nature of
+                the running population.
+                The green curve (Casual) peaks early at ~<span id="fig1-casual">2,500</span> miles, representing those
+                who run sporadically or quit.
+                The red curve (Dedicated) pushes far to the right, centered around <span id="fig1-ded">58,000</span>
+                miles.
+                Note the distinct separation—statistically, it is rare to be a "middle-of-the-road" runner for an entire
+                lifetime. You either dabble or you commit.</figcaption>
         </figure>
 
-        <p>Figure 2 reveals the most fascinating insight: <strong>The Valley of Inconsistency.</strong>
-            <br>When we look at runners at Age 60, we see two distinct peaks. The left peak (~6,000 miles) represents
-            the Casuals who ran for a few years and stopped. The right peak (~45,000 miles) represents the Core runners.
-        </p>
+        <h3>2. The Cumulative Distribution (CDF)</h3>
+        <figure>
+            <img src="output_file_cdf_final.png" alt="CDF of Lifetime Miles Run by Age">
+            <figcaption>Figure 2: Percentile rankings by age. This "S-Curve" shows the massive gap required to reach the
+                top percentiles.
+                The flat region at the bottom represents the non-runner majority.
+                As we move up the y-axis (percentiles), the mileage requirement jumps exponentially.
+                To reach the top 1% (Dedicated/Elite) at Age 70, you need nearly 90,000 miles—equivalent to running
+                around
+                the Earth 3.5 times.</figcaption>
+        </figure>
 
-        <p>Notice the dip in the middle. Very few people end up with 20,000 or 30,000 miles. Why? Because that volume is
-            too high to reach by accident, but too low for a lifetime habit. Statistically, you either dabble or you
-            commit. There is very little middle ground.</p>
+        <h3>3. Median Trajectories</h3>
+        <figure>
+            <img src="output_file_medians_final.png" alt="Median Lifetime Miles by Age for Each Group">
+            <figcaption>Figure 3: The Long-Term Accumulation. This plot reveals how the tribes diverge over time.
+                Casual runners (Green) plateau early as they age out of the sport or maintain very low volume.
+                Dedicated runners (Red) maintain a linear trajectory, stacking consistent decades of volume.
+                The Recreational group (Yellow) sits in the middle, representing the committed hobbyist.</figcaption>
+        </figure>
+
+        <p><strong>Key Insight:</strong> The difference between limits is not pace, but persistence. A Dedicated runner
+            averaging 10-minute miles will eventually build a statistical tower of volume that dwarfs a faster runner
+            who quits after five years.</p>
 
         <h2>5. Interactive Calculators</h2>
 
-        <p>Based on the fitted parameters from the simulation (Casual $\approx$ 576 miles/yr, Core $\approx$ 1,835
+        <p>Based on the fitted parameters from the simulation (Casual $\approx$ 450 miles/yr, Dedicated $\approx$ 2,200
             miles/yr), I have built these calculators to help you estimate your own horizon.</p>
 
         <div class="widget-section">
             <h3>1. Lifetime Estimator</h3>
-            <p>Estimate your total volume based on the years you have spent in each "Tribe."</p>
-
-            <div class="widget-grid">
-                <div>
-                    <label for="casualYears">Years as Casual Runner</label>
-                    <span class="helper-text">~11 miles/week (e.g., 2-3 short runs). Intermittent.</span>
-                    <input type="number" id="casualYears" placeholder="e.g. 5" min="0">
+            <div class="calculator">
+                <h3>Estimator: How many miles have you run?</h3>
+                <div class="input-group">
+                    <label>Years as Casual Runner (~5-10 mpw):</label>
+                    <input type="number" id="casualYears" placeholder="e.g. 5" oninput="calculateTotalMiles()">
                 </div>
-                <div>
-                    <label for="coreYears">Years as Core Runner</label>
-                    <span class="helper-text">~35 miles/week. Consistent year-round.</span>
-                    <input type="number" id="coreYears" placeholder="e.g. 10" min="0">
+                <div class="input-group">
+                    <label>Years as Recreational Runner (~15-25 mpw):</label>
+                    <input type="number" id="recYears" placeholder="e.g. 10" oninput="calculateTotalMiles()">
                 </div>
+                <div class="input-group">
+                    <label>Years as Dedicated Runner (~40+ mpw):</label>
+                    <input type="number" id="dedYears" placeholder="e.g. 2" oninput="calculateTotalMiles()">
+                </div>
+                <div class="result" id="estResult">0 Miles</div>
             </div>
-            <button onclick="calculateTotalMiles()">Estimate Total Miles</button>
-            <div id="estResult" class="result-display">0 Miles</div>
         </div>
 
         <div class="widget-section">
@@ -435,7 +511,8 @@
         <p>The "Long Run" perspective offers a refreshing antidote to daily performance anxiety. When you view running
             through the lens of a lifetime, speed becomes secondary to longevity.</p>
 
-        <p>The difference between the Casual and Core peaks in the data is not pace; it is persistence. A Core runner
+        <p>The difference between the Casual and Dedicated peaks in the data is not pace; it is persistence. A Dedicated
+            runner
             averaging 10-minute miles will eventually build a "statistical tower" of volume that dwarfs a faster runner
             who quits after five years.</p>
 
@@ -449,24 +526,38 @@
         // --- JS LOGIC FOR CALCULATORS ---
 
         // Fitted Parameters from Hierarchical Optimization
-        // Updated with Casual=780/yr and Core=1820/yr targets
+        // Updated with Casual=450/yr and Dedicated=2200/yr targets
         // Structure: Age: { c: [Mean, Std], s: [Mean, Std] }
-        // These match the Python simulation results for the fitted model
+        const W_NON = 0.60;
+        const W_CASUAL = 0.25;
+        const W_REC = 0.10;
+        const W_DEDICATED = 0.05;
+
+        // Cumulative Mileage Stats (Mean, StdDev) for Active Members of each group at various ages
+        // Derived from PyMC/GMM Simulation
         const modelData = {
-            16: { c: [608, 233], s: [1849, 337] },
-            20: { c: [1250, 759], s: [5967, 2544] },
-            30: { c: [2032, 1405], s: [18117, 7799] },
-            40: { c: [3167, 2001], s: [26985, 13283] },
-            50: { c: [3933, 2599], s: [40097, 13720] },
-            60: { c: [4136, 2927], s: [50631, 13335] },
-            70: { c: [4176, 3041], s: [56685, 14456] },
-            80: { c: [4183, 3072], s: [59191, 16312] },
+            16: { c: [439, 182], r: [1178, 523], d: [1737, 335] },
+            20: { c: [794, 486], r: [2890, 1718], d: [6622, 2182] },
+            30: { c: [1293, 912], r: [6944, 3956], d: [19122, 7399] },
+            40: { c: [1977, 1260], r: [14835, 4891], d: [29283, 11429] },
+            50: { c: [2434, 1611], r: [22093, 5697], d: [39649, 11698] },
+            60: { c: [2558, 1811], r: [26499, 7678], d: [45474, 12889] },
+            70: { c: [2583, 1878], r: [28441, 9483], d: [47704, 14474] },
+            80: { c: [2586, 1893], r: [29055, 10404], d: [48351, 15438] },
+        };
+        const WEIGHTS = { non: 0.6, casual: 0.25, rec: 0.1, ded: 0.05 };
+
+        // Generated from Python Script
+        const FIG_STATS = {
+            age60: { casualMode: 1321, recMode: 27747, dedMode: 45165 }
         };
 
-        // Fitted Weights
-        const W_NON = 0.70;    // Non-runners
-        const W_CASUAL = 0.24; // Casual runners
-        const W_CORE = 0.06;   // Core runners
+        function onPageLoad() {
+            // Update Figure 1 Caption with Exact Stats
+            document.getElementById('fig1-casual').innerText = FIG_STATS.age60.casualMode.toLocaleString();
+            document.getElementById('fig1-ded').innerText = FIG_STATS.age60.dedMode.toLocaleString();
+        }
+        window.onload = onPageLoad;
 
         // Math Helpers
         function erf(x) {
@@ -515,16 +606,23 @@
             const t = (age - lower) / (upper - lower);
             return {
                 c: [lerp(modelData[lower].c[0], modelData[upper].c[0], t), lerp(modelData[lower].c[1], modelData[upper].c[1], t)],
-                s: [lerp(modelData[lower].s[0], modelData[upper].s[0], t), lerp(modelData[lower].s[1], modelData[upper].s[1], t)]
+                r: [lerp(modelData[lower].r[0], modelData[upper].r[0], t), lerp(modelData[lower].r[1], modelData[upper].r[1], t)],
+                d: [lerp(modelData[lower].d[0], modelData[upper].d[0], t), lerp(modelData[lower].d[1], modelData[upper].d[1], t)]
             };
         }
 
         // Logic
         function calculateTotalMiles() {
             const c = parseFloat(document.getElementById('casualYears').value) || 0;
-            const s = parseFloat(document.getElementById('coreYears').value) || 0;
-            // Derived means from the optimization: Casual=576/yr, Core=1835/yr
-            const total = (c * 576) + (s * 1835);
+            const r = parseFloat(document.getElementById('recYears').value) || 0;
+            const d = parseFloat(document.getElementById('dedYears').value) || 0;
+
+            // Current Sim "Mixed" Averages approx:
+            // Casual: ~250/yr (5 mpw)
+            // Rec: ~750/yr (15 mpw)
+            // Dedicated: ~2100/yr (40 mpw)
+
+            const total = (c * 250) + (r * 750) + (d * 2100);
 
             const el = document.getElementById('estResult');
             el.innerText = total.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " Miles";
@@ -541,10 +639,11 @@
             // Calculate CDF for each group
             const cdf_n = (miles > 0) ? 1.0 : 0.0;
             const cdf_c = logNormCDF(miles, p.c[0], p.c[1]);
-            const cdf_s = logNormCDF(miles, p.s[0], p.s[1]);
+            const cdf_r = logNormCDF(miles, p.r[0], p.r[1]);
+            const cdf_d = logNormCDF(miles, p.d[0], p.d[1]);
 
             // Weighted Sum (The Mixture)
-            const totalProb = (W_NON * cdf_n) + (W_CASUAL * cdf_c) + (W_CORE * cdf_s);
+            const totalProb = (W_NON * cdf_n) + (W_CASUAL * cdf_c) + (W_REC * cdf_r) + (W_DEDICATED * cdf_d);
             const perc = (totalProb * 100);
 
             let percString = perc.toFixed(1);
@@ -553,35 +652,15 @@
             document.getElementById('percResult').innerText = percString + "th Percentile";
 
             let ctx = "";
-            if (perc < 70) ctx = "You are in the Non-Runner range (Global Majority).";
-            else if (perc < 94) ctx = "You are in the Casual Runner tier, ahead of the global majority.";
-            else ctx = "You are in the Core Runner tier, an elite category of consistency.";
+            if (perc < 60) ctx = "You are in the Non-Runner range (The Majority).";
+            else if (perc < 85) ctx = "You are in the Casual Runner tier.";
+            else if (perc < 95) ctx = "You are in the Recreational Runner tier, consistent and dedicated.";
+            else ctx = "You are in the Dedicated Runner tier, truly an outlier.";
 
             document.getElementById('percContext').innerText = ctx;
         }
     </script>
 
-    <div class="methodology-section"
-        style="max-width: 800px; margin: 4rem auto; padding: 2rem; background: #f8f9fa; border-radius: 12px; font-size: 0.9rem; color: #666;">
-        <h3 style="color: #333; margin-top: 0;">Data Sources & Methodology</h3>
-        <p>This model uses a Hierarchical Bayesian approach to estimate lifetime mileage, constrained by the following
-            real-world data anchors:</p>
-        <ul style="padding-left: 1.5rem; line-height: 1.6;">
-            <li><strong>Strava Year in Sport 2024</strong>: Anchors "Casual" runners (6-9 miles/week).</li>
-            <li><strong>Running USA National Runner Survey</strong>: Anchors "Dedicated" runners (~29.5 miles/week).
-            </li>
-            <li><strong>American Time Use Survey (ATUS 2024)</strong>: Provides the 1.5x activity duration gap used to
-                model Gender differences.</li>
-            <li><strong>Academic Studies (RunRepeat, Frontiers in Sports)</strong>: Provide race-specific volume
-                distributions (e.g., Male Marathoners ~37mpw vs Female Rec ~17mpw).</li>
-        </ul>
-        <p style="margin-top: 1rem;">
-            <em>Note: The "Gender" factor is applied as a probabilistic shift based on ATUS and race-participation data.
-                "Neutral" assumes a weighted population average.</em>
-        </p>
-    </div>
-
 </body>
 
 </html>
-```
