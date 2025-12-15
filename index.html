@@ -249,7 +249,7 @@
         <h2>1. Conceptual Framework: Latent Sub-Populations</h2>
 
         <p>A single "average" lifetime mileage figure is statistically meaningless due to the heavy skew of the
-            population. Instead, this model defines three latent groups ("components") that comprise the total
+            population. Instead, this model defines four latent groups ("components") that comprise the total
             population:</p>
 
         <ul>
@@ -257,14 +257,18 @@
                 running volume. Modeled as a structural zero ($\delta(0)$).</li>
 
             <li><strong>Casual Runners ($\pi_C \approx 25\%$):</strong> Seasonal or intermittent participants. Their
-                volume typically centers around <strong>500-600 miles/year</strong> (~11 mpw), often plateauing or
+                volume typically centers around <strong>~300-500 miles/year</strong> (~6-10 mpw), often plateauing or
                 declining after early adulthood.</li>
 
+            <li><strong>Recreational Runners ($\pi_R \approx 10\%$):</strong> Consistent hobbyists. This group averages
+                <strong>~800-900 miles/year</strong> (~15-18 mpw), representing the "weekend warrior" or regular social
+                runner.
+            </li>
+
             <li><strong>Dedicated Runners ($\pi_D \approx 5\%$):</strong> The committed minority for whom running is a
-                primary lifestyle habit. This group averages <strong>~1,800 miles/year</strong> usage (~35 mpw) and
+                primary lifestyle habit. This group averages <strong>~1,800 miles/year</strong> (~35 mpw) and
                 maintains consistency over decades, driving the upper tail of the distribution.</li>
         </ul>
-        <p><em>Note: A "Recreational" transition group (~10%) exists between the Casual and Dedicated tiers.</em></p>
 
         <h2>2. The Mathematical Model</h2>
 
@@ -312,15 +316,18 @@
             <strong>Observation Map:</strong>
             <ul style="list-style-type: none; padding-left: 0;">
                 <li><strong>1. Casual (Mixed):</strong> $\mu_{casual} + 0.5\beta_{gender} \sim \mathcal{N}(\ln(312))$
-                    <br> <small><em>Source: Strava Gen Z Median (6 mpw)</em></small></li>
+                    <br> <small><em>Source: Strava Gen Z Median (6 mpw)</em></small>
+                </li>
                 <li><strong>2. Casual (Mixed):</strong> $\mu_{casual} + 0.5\beta_{gender} \sim \mathcal{N}(\ln(468))$
-                    <br> <small><em>Source: Strava Boomer Median (9 mpw)</em></small></li>
+                    <br> <small><em>Source: Strava Boomer Median (9 mpw)</em></small>
+                </li>
                 <li><strong>3. Recreational (Female):</strong> $\mu_{rec} \quad \quad \quad \quad \quad \sim
                     \mathcal{N}(\ln(874))$ <br> <small><em>Source: RunRepeat Female Avg (16.8 mpw)</em></small></li>
                 <li><strong>4. Dedicated (Male):</strong> $\mu_{ded} + \beta_{gender} \quad \;\; \sim
                     \mathcal{N}(\ln(1924))$ <br> <small><em>Source: Male Marathoner Avg (37 mpw)</em></small></li>
                 <li><strong>5. Dedicated (Mixed):</strong> $\mu_{ded} + 0.5\beta_{gender} \sim \mathcal{N}(\ln(1820))$
-                    <br> <small><em>Source: Running USA Core Avg (35 mpw)</em></small></li>
+                    <br> <small><em>Source: Running USA Core Avg (35 mpw)</em></small>
+                </li>
             </ul>
         </div>
 
@@ -329,7 +336,8 @@
 
                 <h2>3. The Accumulation function $\mu(t)$</h2>
                 <p>Lifetime mileage is not a static number; it is a time-series accumulation. To simulate this, we use a
-                    <strong>Piecewise Accumulation Function</strong>.</p>
+                    <strong>Piecewise Accumulation Function</strong>.
+                </p>
 
                 <p>For a simulated individual $i$, the total mileage at age $t$ is the sum of annual volumes
                     $V_i(\tau)$:</p>
@@ -385,15 +393,28 @@
                 <h3>3. Median Trajectories</h3>
                 <figure>
                     <img src="output_file_medians_final.png" alt="Median Lifetime Miles by Age for Each Group">
-                    <figcaption>Figure 3: The Long-Term Accumulation. This plot reveals how the tribes diverge over
-                        time.
+                    <figcaption>Figure 3: Median Accumulated Volume by Group. This plot reveals how the tribes diverge
+                        over time.
                         Casual runners (Green) plateau early as they age out of the sport or maintain very low volume.
                         Dedicated runners (Red) maintain a linear trajectory, stacking consistent decades of volume.
                         The Recreational group (Yellow) sits in the middle, representing the committed hobbyist.
                     </figcaption>
                 </figure>
 
+                <h3>4. Consistency of Habit</h3>
+                <figure>
+                    <img src="output_file_consistency.png"
+                        alt="Distribution of Consistency Ratios (Active Years / Career Duration)">
+                    <figcaption>Figure 4: Intermittency vs Consistency. The Casual distribution (Green) is broad,
+                        showing that
+                        many casual runners have significant "gap years". The Dedicated distribution (Red) is clustered
+                        tightly
+                        at 1.0 (100% active years), illustrating that consistency is the defining trait of the group.
+                    </figcaption>
+                </figure>
+
                 <p><strong>Key Insight:</strong> The difference between limits is not pace, but persistence. A Dedicated
+                    runner
                     runner
                     averaging 10-minute miles will eventually build a statistical tower of volume that dwarfs a faster
                     runner
@@ -409,6 +430,8 @@
                     <h3>1. Lifetime Estimator</h3>
                     <div class="calculator">
                         <h3>Estimator: How many miles have you run?</h3>
+                        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1.5rem;">Sum your active years
+                            below. Any years not accounted for are treated as "Non-Runner" years (0 miles).</p>
                         <div class="input-group">
                             <label>Gender Shift:</label>
                             <select id="estGender"
@@ -437,7 +460,9 @@
 
                 <div class="widget-section">
                     <h3>2. Global Percentile Rank</h3>
-                    <p>Compare your lifetime total against the global population for your age group.</p>
+                    <p>Compare your lifetime total against the entire global population for your age group,
+                        <strong>including the ~60% of people who are non-runners</strong>.
+                    </p>
 
                     <div class="widget-grid">
                         <div>

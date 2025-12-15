@@ -407,3 +407,46 @@ plt.tight_layout()
 plt.savefig('output_file_medians_final.png')
 
 print("Done. Saved outputs.")
+
+# --- Consistency / Intermittency Plot ---
+print("Generating Consistency Plot...")
+plt.figure(figsize=(10, 6))
+
+def get_consistency_ratios(indices, starts, stops):
+    ratios = []
+    for i, idx in enumerate(indices):
+        start_age = int(max(16, starts[i]))
+        stop_age = int(min(80, stops[i]))
+        duration = stop_age - start_age
+        
+        if duration < 1:
+            continue
+            
+        # Count active years in this window
+        # annual_miles is (N_SIM, 81)
+        # We need the specific row for this user: annual_miles[idx]
+        user_miles = annual_miles[idx, start_age:stop_age+1]
+        active_years = np.sum(user_miles > 0)
+        
+        ratio = active_years / (duration + 1) # +1 for inclusive
+        ratios.append(ratio)
+    return np.array(ratios)
+
+ratios_c = get_consistency_ratios(idx_c, starts_c, stops_c)
+ratios_r = get_consistency_ratios(idx_r, starts_r, stops_r)
+ratios_d = get_consistency_ratios(idx_d, starts_d, stops_d)
+
+sns.kdeplot(ratios_c, color='#2ecc71', fill=True, label='Casual (Simulated)', clip=(0,1))
+sns.kdeplot(ratios_r, color='#f1c40f', fill=True, label='Recreational (Simulated)', clip=(0,1))
+sns.kdeplot(ratios_d, color='#e74c3c', fill=True, label='Dedicated (Simulated)', clip=(0,1))
+
+plt.xlabel("Consistency Ratio (Active Years / Career Duration)")
+plt.ylabel("Density")
+plt.title("Figure 4: Consistency of Habit by Group")
+plt.xlim(0, 1)
+plt.legend(loc='upper left')
+plt.grid(True, linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.savefig('output_file_consistency.png')
+print("Saved output_file_consistency.png")
