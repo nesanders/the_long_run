@@ -268,208 +268,217 @@
 
         <h2>2. The Mathematical Model</h2>
 
-        <p>To move from concept to calculation, we need a rigorous statistical framework. We model the probability
-            density of Lifetime Miles ($M$) for an individual at age $t$ using a <strong>Gaussian Mixture Model
-                (GMM)</strong>.</p>
+        <p>To move from concept to calculation, we use a <strong>Hierarchical Bayesian Framework</strong>. We model the
+            individual annual volume $V$ as a Log-Normal random variable, conditioned on the latent group assignment $k
+            \in \{C, R, D\}$.</p>
 
-        <p>The posterior equation is defined as follows:</p>
+        <p>The core philosophy is that "Casual", "Recreational", and "Dedicated" are not arbitrary labels, but distinct
+            statistical modes with their own accumulation properties ($k$) and gender-based shifts ($\beta_g$).</p>
+
+        <h3>2.1 Hierarchical Structure</h3>
+        <p>The model estimates the log-scale mean $\mu_k$ for each group. We explicitly model a <strong>Gender
+                Shift</strong> ($\beta_{gender}$) based on time-use survey data, allowing us to triangulate "Mixed",
+            "Male", and "Female" data sources simultaneously.</p>
 
         <div class="math-block">
-            $$ P(M | t) = \pi_{N} \delta(0) + \sum_{k \in \{C, R, D\}} \pi_{k} \mathcal{LN}(M; \mu_k(t), \sigma_k^2) $$
+            $$ \ln(V_{i}) \sim \mathcal{N}(\mu_{k} + \mathbb{I}_{male} \cdot \beta_{gender}, \sigma_k^2) $$
         </div>
 
-        <h3>2.1 Parameter Definitions</h3>
-        <ul>
-            <li><strong>$\mu(t)$ (Accumulation Function):</strong> The log-scale mean of accumulated volume. For
-                Dedicated runners, this grows linearly; for Casual runners, it follows a saturating function.</li>
-            <li><strong>$\tau_{quit}$ (Retention Parameter):</strong> A new inferred parameter representing the "active
-                lifespan." The model constrains the dedicated runner's career to an average of ~30 years based on
-                physiological limit heuristics.</li>
-        </ul>
+        <p>Where $\mu_k$ is the female baseline for group $k$, and $\beta_{gender}$ represents the log-scale multiplier
+            for male volume.</p>
 
-        <h3>2.2 The Genesis Function</h3>
-        <p>The model explicitly accounts for start-age variance. Dedicated runners exhibit a <strong>bimodal
-                genesis</strong>:
-        <ul>
-            <li><strong>Early Onset (~Age 16):</strong> High school / collegiate athletes.</li>
-            <li><strong>Adult Onset (~Age 30):</strong> Health-conscious adopters.</li>
-        </ul>
-        This delay is encoded mathematically: $\mu_D(t)$ tracks the aggregate of piecewise linear accumulation functions
-        $\sum V_i(\tau)$, where $V_i=0$ until the individual start age is reached. This explains the wider variance
-        observed in the 30-40 age bracket.</p>
+        <h3>2.2 Bayesian Priors</h3>
+        <p>We solve for these parameters using <strong>PyMC</strong> (Probabilistic Programming). The following priors
+            serve as the "initial guess" before seeing the data:</p>
 
-        <h3>Model Inputs (Bayesian Priors)</h3>
-        <p>The model uses the following weak priors, allowing the data anchors to drive the posterior distribution:</p>
-        <div class="equation" style="text-align: left; padding-left: 2rem;">
+        <div class="math-block" style="text-align: left; padding-left: 2rem;">
             \[
             \begin{aligned}
-            \beta_{gender} &\sim \mathcal{N}(0.42, 0.1) \quad (\text{Log-Scale Shift}) \\
-            \mu_{casual} &\sim \mathcal{N}(\ln(300), 0.8) \\
-            \mu_{rec} &\sim \mathcal{N}(\ln(800), 0.5) \\
-            \mu_{ded} &\sim \mathcal{N}(\ln(1400), 0.5) \\
-            \sigma_{groups} &\sim \mathcal{HN}(0.5) \\
-            \tau_{quit} &\sim \mathcal{N}(30, 5) \quad (\text{Dedicated Duration})
+            \text{Gender Shift:} & \quad \beta_{gender} \sim \mathcal{N}(\ln(1.53), 0.1) \quad (\text{Source: ATUS
+            2024}) \\
+            \text{Casual Base:} & \quad \mu_{casual} \sim \mathcal{N}(\ln(300), 0.8) \\
+            \text{Rec Base:} & \quad \mu_{rec} \sim \mathcal{N}(\ln(800), 0.5) \\
+            \text{Dedicated Base:} & \quad \mu_{ded} \sim \mathcal{N}(\ln(1400), 0.5) \\
+            \text{Variability:} & \quad \sigma_{k} \sim \mathcal{HN}(0.5)
             \end{aligned}
             \]
         </div>
 
-        <h3>2.3 The Gender Coefficient ($\beta_{gender}$)</h3>
-        <p>The model infers a gender gap of $\approx 1.5$x (Male volume vs Female volume). This is not an assumption,
-            but a statistical necessity derived from the tension between the anchors:
-        <ul>
-            <li><strong>The "Male" Anchor:</strong> Dedicated Male Marathoners average ~40 mpw (Source: <em>Gordon et
-                    al.</em>).</li>
-            <li><strong>The "Mixed" Anchor:</strong> Global Strava data (Mixed Gender) averages substantially lower.
-            </li>
-            <li><strong>The "Female" Anchor:</strong> RunRepeat data indicates female recreational runners average
-                ~15-20% less volume than mixed averages in similar cohorts.</li>
-        </ul>
-        The MCMC sampling found that setting $\beta_{gender} \approx 0.41$ (on the log scale) was the optimal way to
-        satisfy all three constraints simultaneously.</p>
-
-        <h2>3. Data Calibration & Constraints</h2>
-
-        <p>The model's priors were calibrated using a Hierarchical Loss Function against three primary anchors:</p>
-
-        <ul>
-            <li><strong>Casual Anchor:</strong> <em>Strava Year in Sport (2023-24)</em>. Median volume for active users
-                is ~8.1 miles/week. The model targets a Casual mean of ~576 miles/year.</li>
-            <li><strong>Dedicated Anchor:</strong> <em>Running USA & Academic Literature</em>. Serious amateurs
-                consistently volume in the 35-50 mpw range. The model targets a Dedicated mean of ~1,820 miles/year.
-            </li>
-            <li><strong>The "Herron Limit" (Tail Constraint):</strong> The induction of Camille Herron into the 100k
-                Probability club at age 40 serves as a biological upper bound. The model applies a soft penalty if the
-                probability of mass $> 100k$ at Age 40 exceeds $10^{-5}$.</li>
-        </ul>
-
-        <h3>Bayesian Updating</h3>
-        <p>The likelihood function triangulates these anchors to solve for latent variables:</p>
+        <h3>2.3 Likelihoods (The Data Anchors)</h3>
+        <p>The model updates these priors by conditioning on five specific observational anchors (Likelihoods). Each
+            anchor constrains the posterior distribution:</p>
 
         <div class="highlight-box">
             <strong>Observation Map:</strong>
             <ul style="list-style-type: none; padding-left: 0;">
-                <li>$\mu_{casual} + 0.5\beta_{gender} \sim \mathcal{N}(\text{Strava Mixed Data})$</li>
-                <li>$\mu_{rec} \quad \quad \quad \quad \quad \sim \mathcal{N}(\text{Female RunRepeat Avg})$</li>
-                <li>$\mu_{ded} + \beta_{gender} \quad \;\; \sim \mathcal{N}(\text{Male Marathoner Avg})$</li>
-                <li>$\mu_{ded} + 0.5\beta_{gender} \sim \mathcal{N}(\text{Running USA Core Avg})$</li>
-                <li>$\mu_{ded} + \ln(\tau_{quit}) \quad \;\; < \text{Herron Limit (100k)}$</li>
+                <li><strong>1. Casual (Mixed):</strong> $\mu_{casual} + 0.5\beta_{gender} \sim \mathcal{N}(\ln(312))$
+                    <br> <small><em>Source: Strava Gen Z Median (6 mpw)</em></small></li>
+                <li><strong>2. Casual (Mixed):</strong> $\mu_{casual} + 0.5\beta_{gender} \sim \mathcal{N}(\ln(468))$
+                    <br> <small><em>Source: Strava Boomer Median (9 mpw)</em></small></li>
+                <li><strong>3. Recreational (Female):</strong> $\mu_{rec} \quad \quad \quad \quad \quad \sim
+                    \mathcal{N}(\ln(874))$ <br> <small><em>Source: RunRepeat Female Avg (16.8 mpw)</em></small></li>
+                <li><strong>4. Dedicated (Male):</strong> $\mu_{ded} + \beta_{gender} \quad \;\; \sim
+                    \mathcal{N}(\ln(1924))$ <br> <small><em>Source: Male Marathoner Avg (37 mpw)</em></small></li>
+                <li><strong>5. Dedicated (Mixed):</strong> $\mu_{ded} + 0.5\beta_{gender} \sim \mathcal{N}(\ln(1820))$
+                    <br> <small><em>Source: Running USA Core Avg (35 mpw)</em></small></li>
             </ul>
         </div>
-        </div>
-        <p>The model converges on a male gender coefficient $\beta_{gender} \approx 0.41$ (log-scale), implying Men run
-            ~1.5x more volume than Women on average within the same dedicated tier.</p>
 
-        <h2>4. Visualizing the Results</h2>
+        <p>Additionally, we apply a <strong>Soft Constraint (Potential)</strong> based on the "Herron Limit": the
+            probability of a runner reaching 100,000 miles by age 40 should be negligible ($< 10^{-5}$).</p>
 
-        <h3>1. The Probability Density (PDF)</h3>
-        <figure>
-            <img src="output_file_pdf_final.png" alt="Distribution of Lifetime Miles for Runners at Age 60">
-            <figcaption>Figure 1: The "Valley of Inconsistency" at Age 60. The distribution is strongly bimodal. The
-                Casual curve (green) peaks at ~<span id="fig1-casual">2,500</span> miles, while the Dedicated curve
-                (red) centers on <span id="fig1-ded">58,000</span> miles. Intermediate volumes are statistically rare.
-            </figcaption>
-        </figure>
+                <h2>3. The Accumulation function $\mu(t)$</h2>
+                <p>Lifetime mileage is not a static number; it is a time-series accumulation. To simulate this, we use a
+                    <strong>Piecewise Accumulation Function</strong>.</p>
 
-        <h3>2. The Cumulative Distribution (CDF)</h3>
-        <figure>
-            <img src="output_file_cdf_final.png" alt="CDF of Lifetime Miles Run by Age">
-            <figcaption>Figure 2: Percentile rankings by age. This "S-Curve" shows the massive gap required to reach the
-                top percentiles.
-                The flat region at the bottom represents the non-runner majority.
-                As we move up the y-axis (percentiles), the mileage requirement jumps exponentially.
-                To reach the top 1% (Dedicated/Elite) at Age 70, you need nearly 90,000 miles—equivalent to running
-                around
-                the Earth 3.5 times.</figcaption>
-        </figure>
+                <p>For a simulated individual $i$, the total mileage at age $t$ is the sum of annual volumes
+                    $V_i(\tau)$:</p>
 
-        <h3>3. Median Trajectories</h3>
-        <figure>
-            <img src="output_file_medians_final.png" alt="Median Lifetime Miles by Age for Each Group">
-            <figcaption>Figure 3: The Long-Term Accumulation. This plot reveals how the tribes diverge over time.
-                Casual runners (Green) plateau early as they age out of the sport or maintain very low volume.
-                Dedicated runners (Red) maintain a linear trajectory, stacking consistent decades of volume.
-                The Recreational group (Yellow) sits in the middle, representing the committed hobbyist.</figcaption>
-        </figure>
-
-        <p><strong>Key Insight:</strong> The difference between limits is not pace, but persistence. A Dedicated runner
-            averaging 10-minute miles will eventually build a statistical tower of volume that dwarfs a faster runner
-            who quits after five years.</p>
-
-        <h2>5. Interactive Calculators</h2>
-
-        <p>Based on the fitted parameters from the simulation (Casual $\approx$ 450 miles/yr, Dedicated $\approx$ 2,200
-            miles/yr), I have built these calculators to help you estimate your own horizon.</p>
-
-        <div class="widget-section">
-            <h3>1. Lifetime Estimator</h3>
-            <div class="calculator">
-                <h3>Estimator: How many miles have you run?</h3>
-                <div class="input-group">
-                    <label>Gender Shift:</label>
-                    <select id="estGender"
-                        style="width: 100%; padding: 1rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; background: white;"
-                        onchange="calculateTotalMiles()">
-                        <option value="mixed">Mixed / Neutral</option>
-                        <option value="female">Female</option>
-                        <option value="male">Male</option>
-                    </select>
+                <div class="math-block">
+                    $$ M_i(t) = \sum_{\tau=16}^{t} \mathbb{I}_{active}(\tau) \cdot V_i(\tau) $$
                 </div>
-                <div class="input-group">
-                    <label>Years as Casual Runner (~5-10 mpw):</label>
-                    <input type="number" id="casualYears" placeholder="e.g. 5" oninput="calculateTotalMiles()">
-                </div>
-                <div class="input-group">
-                    <label>Years as Recreational Runner (~15-25 mpw):</label>
-                    <input type="number" id="recYears" placeholder="e.g. 10" oninput="calculateTotalMiles()">
-                </div>
-                <div class="input-group">
-                    <label>Years as Dedicated Runner (~40+ mpw):</label>
-                    <input type="number" id="dedYears" placeholder="e.g. 2" oninput="calculateTotalMiles()">
-                </div>
-                <div class="result" id="estResult">0 Miles</div>
-            </div>
-        </div>
 
-        <div class="widget-section">
-            <h3>2. Global Percentile Rank</h3>
-            <p>Compare your lifetime total against the global population for your age group.</p>
+                <p>The "Active" status is determined by a generated lifecycle:</p>
+                <ul>
+                    <li><strong>Start Age ($T_{start}$):</strong>
+                        <ul>
+                            <li>Casual/Rec: Unimodal Normal Distribution (~24-28 years old).</li>
+                            <li>Dedicated: <strong>Bimodal Distribution</strong> (~Age 16 for athletes, ~Age 30 for
+                                adult onset).</li>
+                        </ul>
+                    </li>
+                    <li><strong>Duration ($\Delta_{active}$):</strong> Modeled as a Gamma Distribution. Dedicated
+                        runners have a mean duration of ~30 years, while Casual runners average ~5 years.</li>
+                    <li><strong>Intermittency ($p_{active}$):</strong> A Bernoulli coin flip each year to determine if
+                        the runner was active that specific year (ranging from 60% consistency for Casual to 95% for
+                        Dedicated).</li>
+                </ul>
 
-            <div class="widget-grid">
-                <div>
-                    <label for="userAge">Current Age</label>
-                    <span class="helper-text">Between 16 and 80</span>
-                    <input type="number" id="userAge" placeholder="30" min="16" max="80">
+                <h2>4. Visualizing the Results</h2>
+
+                <h3>1. The Probability Density (PDF)</h3>
+                <figure>
+                    <img src="output_file_pdf_final.png" alt="Distribution of Lifetime Miles for Runners at Age 60">
+                    <figcaption>Figure 1: The "Valley of Inconsistency" at Age 60. The distribution is strongly bimodal.
+                        The
+                        Casual curve (green) peaks at ~<span id="fig1-casual">2,500</span> miles, while the Dedicated
+                        curve
+                        (red) centers on <span id="fig1-ded">58,000</span> miles. Intermediate volumes are statistically
+                        rare.
+                    </figcaption>
+                </figure>
+
+                <h3>2. The Cumulative Distribution (CDF)</h3>
+                <figure>
+                    <img src="output_file_cdf_final.png" alt="CDF of Lifetime Miles Run by Age">
+                    <figcaption>Figure 2: Percentile rankings by age. This "S-Curve" shows the massive gap required to
+                        reach the
+                        top percentiles.
+                        The flat region at the bottom represents the non-runner majority.
+                        As we move up the y-axis (percentiles), the mileage requirement jumps exponentially.
+                        To reach the top 1% (Dedicated/Elite) at Age 70, you need nearly 90,000 miles—equivalent to
+                        running
+                        around
+                        the Earth 3.5 times.</figcaption>
+                </figure>
+
+                <h3>3. Median Trajectories</h3>
+                <figure>
+                    <img src="output_file_medians_final.png" alt="Median Lifetime Miles by Age for Each Group">
+                    <figcaption>Figure 3: The Long-Term Accumulation. This plot reveals how the tribes diverge over
+                        time.
+                        Casual runners (Green) plateau early as they age out of the sport or maintain very low volume.
+                        Dedicated runners (Red) maintain a linear trajectory, stacking consistent decades of volume.
+                        The Recreational group (Yellow) sits in the middle, representing the committed hobbyist.
+                    </figcaption>
+                </figure>
+
+                <p><strong>Key Insight:</strong> The difference between limits is not pace, but persistence. A Dedicated
+                    runner
+                    averaging 10-minute miles will eventually build a statistical tower of volume that dwarfs a faster
+                    runner
+                    who quits after five years.</p>
+
+                <h2>5. Interactive Calculators</h2>
+
+                <p>Based on the fitted parameters from the simulation (Casual $\approx$ 450 miles/yr, Dedicated
+                    $\approx$ 2,200
+                    miles/yr), I have built these calculators to help you estimate your own horizon.</p>
+
+                <div class="widget-section">
+                    <h3>1. Lifetime Estimator</h3>
+                    <div class="calculator">
+                        <h3>Estimator: How many miles have you run?</h3>
+                        <div class="input-group">
+                            <label>Gender Shift:</label>
+                            <select id="estGender"
+                                style="width: 100%; padding: 1rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; background: white;"
+                                onchange="calculateTotalMiles()">
+                                <option value="mixed">Mixed / Neutral</option>
+                                <option value="female">Female</option>
+                                <option value="male">Male</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Years as Casual Runner (~5-10 mpw):</label>
+                            <input type="number" id="casualYears" placeholder="e.g. 5" oninput="calculateTotalMiles()">
+                        </div>
+                        <div class="input-group">
+                            <label>Years as Recreational Runner (~15-25 mpw):</label>
+                            <input type="number" id="recYears" placeholder="e.g. 10" oninput="calculateTotalMiles()">
+                        </div>
+                        <div class="input-group">
+                            <label>Years as Dedicated Runner (~40+ mpw):</label>
+                            <input type="number" id="dedYears" placeholder="e.g. 2" oninput="calculateTotalMiles()">
+                        </div>
+                        <div class="result" id="estResult">0 Miles</div>
+                    </div>
                 </div>
-                <div>
-                    <label for="userGender">Gender</label>
-                    <span class="helper-text">Adjusts baseline volume</span>
-                    <select id="userGender"
-                        style="width: 100%; padding: 1rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; background: white;">
-                        <option value="mixed">Mixed / Neutral</option>
-                        <option value="female">Female</option>
-                        <option value="male">Male</option>
-                    </select>
+
+                <div class="widget-section">
+                    <h3>2. Global Percentile Rank</h3>
+                    <p>Compare your lifetime total against the global population for your age group.</p>
+
+                    <div class="widget-grid">
+                        <div>
+                            <label for="userAge">Current Age</label>
+                            <span class="helper-text">Between 16 and 80</span>
+                            <input type="number" id="userAge" placeholder="30" min="16" max="80">
+                        </div>
+                        <div>
+                            <label for="userGender">Gender</label>
+                            <span class="helper-text">Adjusts baseline volume</span>
+                            <select id="userGender"
+                                style="width: 100%; padding: 1rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1.1rem; background: white;">
+                                <option value="mixed">Mixed / Neutral</option>
+                                <option value="female">Female</option>
+                                <option value="male">Male</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="userMiles">Total Lifetime Miles</label>
+                            <span class="helper-text">Your estimated total</span>
+                            <input type="number" id="userMiles" placeholder="1000" min="0">
+                        </div>
+                    </div>
+                    <button onclick="calculatePercentile()">Calculate Percentile</button>
+                    <div id="percResult" class="result-display">-- th Percentile</div>
+                    <p id="percContext" style="text-align:center; font-size:1rem; color:#6b7280; margin-top:1rem;"></p>
                 </div>
-                <div>
-                    <label for="userMiles">Total Lifetime Miles</label>
-                    <span class="helper-text">Your estimated total</span>
-                    <input type="number" id="userMiles" placeholder="1000" min="0">
-                </div>
-            </div>
-            <button onclick="calculatePercentile()">Calculate Percentile</button>
-            <div id="percResult" class="result-display">-- th Percentile</div>
-            <p id="percContext" style="text-align:center; font-size:1rem; color:#6b7280; margin-top:1rem;"></p>
-        </div>
 
-        <h2>6. Conclusion</h2>
+                <h2>6. Conclusion</h2>
 
-        <p>The difference between the Casual and Dedicated outcomes is driven less by pace than by persistence. A
-            Dedicated runner averaging 10-minute miles will eventually accumulate a total volume that dwarfs a faster
-            runner with lower consistency.</p>
+                <p>The difference between the Casual and Dedicated outcomes is driven less by pace than by persistence.
+                    A
+                    Dedicated runner averaging 10-minute miles will eventually accumulate a total volume that dwarfs a
+                    faster
+                    runner with lower consistency.</p>
 
-        <p>While daily metrics are useful for training, the "Long Run" perspective emphasizes the compounding nature of
-            the activity. Whether your lifetime projection is 5,000 or 50,000 miles, the data suggests that longevity is
-            the primary driver of total output.</p>
+                <p>While daily metrics are useful for training, the "Long Run" perspective emphasizes the compounding
+                    nature of
+                    the activity. Whether your lifetime projection is 5,000 or 50,000 miles, the data suggests that
+                    longevity is
+                    the primary driver of total output.</p>
 
     </main>
 
