@@ -334,7 +334,7 @@ ax.xaxis.set_major_locator(ticker.MultipleLocator(20000))
 
 plt.xlabel("Lifetime Miles")
 plt.ylabel("Density (Cond. on Active)")
-plt.title(f"Mixture Distribution of Lifetime Miles (Age {target_age})")
+plt.title(f"Figure 1: Probability Density of Lifetime Miles (Age {target_age})")
 plt.legend()
 plt.tight_layout()
 plt.savefig('output_file_pdf_final.png')
@@ -350,7 +350,6 @@ plt.figure(figsize=(10, 6))
 # Just plot total CDF for a few ages
 # More colorful palette: Green -> Yellow -> Orange -> Red
 colors = ['#2ecc71', '#f1c40f', '#3498db', '#e74c3c']
-ages_cdf = [30, 50, 60, 70] # added 60 to have 4 lines if we want, or keep 3. Let's do 30, 50, 70.
 ages_cdf = [30, 50, 70]
 for i, age in enumerate(ages_cdf):
     data = cumulative[:, age]
@@ -363,7 +362,7 @@ plt.xlim(-50, 150000)
 plt.ylim(0, 1.05)
 plt.xlabel("Lifetime Miles (Log Scale)")
 plt.ylabel("Percentile")
-plt.title("CDF of Lifetime Running Miles by Age")
+plt.title("Figure 2: Cumulative Distribution Function (CDF)")
 plt.legend(loc="lower right")
 plt.tight_layout()
 plt.savefig('output_file_cdf_final.png')
@@ -373,26 +372,37 @@ plt.savefig('output_file_cdf_final.png')
 plt.figure(figsize=(10, 6))
 
 ages = np.arange(16, 81)
-med_c = []
-med_r = []
-med_d = []
+medians_c = []
+medians_r = []
+medians_d = []
 
+# Use vectorized approach from stats is tricky, simpler to use simulation stats
+# We can just compute median of active members from simulation at each age
 for age in ages:
-    med_c.append(np.median(cumulative[idx_c, age]))
-    med_r.append(np.median(cumulative[idx_r, age]))
-    med_d.append(np.median(cumulative[idx_d, age]))
+    # Casual
+    c_slice = annual_miles[idx_c, :age].sum(axis=1)
+    # Only active? No, median of the GROUP
+    medians_c.append(np.median(c_slice))
+    
+    # Rec
+    r_slice = annual_miles[idx_r, :age].sum(axis=1)
+    medians_r.append(np.median(r_slice))
+    
+    # Ded
+    d_slice = annual_miles[idx_d, :age].sum(axis=1)
+    medians_d.append(np.median(d_slice))
 
-plt.plot(ages, med_c, label='Casual', color='#2ecc71', linewidth=2.5)
-plt.plot(ages, med_r, label='Recreational', color='#f1c40f', linewidth=2.5)
-plt.plot(ages, med_d, label='Dedicated', color='#e74c3c', linewidth=2.5)
+plt.plot(ages, medians_c, label='Casual', color='#27ae60', linewidth=3)
+plt.plot(ages, medians_r, label='Recreational', color='#f39c12', linewidth=3)
+plt.plot(ages, medians_d, label='Dedicated', color='#c0392b', linewidth=3)
 
-ax = plt.gca()
-ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f'{int(x/1000)}k'))
 plt.xlabel("Age")
 plt.ylabel("Cumulative Miles")
-plt.title("Median Lifetime Miles by Age (Three Tribes)")
+plt.title("Figure 3: Median Accumulated Volume by Group")
 plt.legend()
 plt.grid(True, linestyle='--', alpha=0.7)
+ax = plt.gca()
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f'{int(x/1000)}k'))
 plt.tight_layout()
 plt.savefig('output_file_medians_final.png')
 
