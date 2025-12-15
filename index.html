@@ -7,6 +7,13 @@
     <title>The Long Run: A Bayesian Analysis of Lifetime Mileage</title>
     <!-- MathJax for LaTeX rendering -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         :root {
@@ -294,7 +301,8 @@
                 accounts for the fact that a huge portion of the population has 0 lifetime miles.</li>
             <li><strong>$\mathcal{LN}$ (Log-Normal Distribution):</strong> We use Log-Normal rather than Normal
                 distributions because mileage is strictly positive and "heavy-tailed." A small number of people run
-                <em>orders of magnitude</em> more than the median.</li>
+                <em>orders of magnitude</em> more than the median.
+            </li>
             <li><strong>$\mu(t)$ (Accumulation Function):</strong> This is the heart of the model. It represents the
                 accumulated volume over time. For Core runners, this function grows linearly and aggressively; for
                 Casual runners, it grows slowly and often plateaus as they age out of the sport.</li>
@@ -357,7 +365,8 @@
         <p>The CDF in Figure 1 illustrates the "S-Curve" of running. The graph stays flat at y=0.70 because 70% of
             people are non-runners. To enter the top 10% of the global population at Age 70 (the Red line), you need
             approximately <strong>20,000 lifetime miles</strong>. To reach the top 1% (Elite Core), you need nearly
-            <strong>90,000 miles</strong>—equivalent to running around the Earth 3.5 times.</p>
+            <strong>90,000 miles</strong>—equivalent to running around the Earth 3.5 times.
+        </p>
 
         <h3>The Probability Density (PDF)</h3>
         <figure>
@@ -552,6 +561,27 @@
         }
     </script>
 
+    <div class="methodology-section"
+        style="max-width: 800px; margin: 4rem auto; padding: 2rem; background: #f8f9fa; border-radius: 12px; font-size: 0.9rem; color: #666;">
+        <h3 style="color: #333; margin-top: 0;">Data Sources & Methodology</h3>
+        <p>This model uses a Hierarchical Bayesian approach to estimate lifetime mileage, constrained by the following
+            real-world data anchors:</p>
+        <ul style="padding-left: 1.5rem; line-height: 1.6;">
+            <li><strong>Strava Year in Sport 2024</strong>: Anchors "Casual" runners (6-9 miles/week).</li>
+            <li><strong>Running USA National Runner Survey</strong>: Anchors "Dedicated" runners (~29.5 miles/week).
+            </li>
+            <li><strong>American Time Use Survey (ATUS 2024)</strong>: Provides the 1.5x activity duration gap used to
+                model Gender differences.</li>
+            <li><strong>Academic Studies (RunRepeat, Frontiers in Sports)</strong>: Provide race-specific volume
+                distributions (e.g., Male Marathoners ~37mpw vs Female Rec ~17mpw).</li>
+        </ul>
+        <p style="margin-top: 1rem;">
+            <em>Note: The "Gender" factor is applied as a probabilistic shift based on ATUS and race-participation data.
+                "Neutral" assumes a weighted population average.</em>
+        </p>
+    </div>
+
 </body>
 
 </html>
+```
