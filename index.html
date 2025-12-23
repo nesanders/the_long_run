@@ -480,7 +480,29 @@
                 distribution.</figcaption>
         </figure>
 
-        <h2>6. Interactive Calculators</h2>
+        <h2>6. Model Calibration & Diagnostics</h2>
+        <p>A statistical model is only as good as its ability to replicate the observed data. To verify the "goodness of
+            fit" for this Bayesian approach, we use two standard diagnostics: <strong>Posterior Predictive Checks
+                (PPC)</strong> and <strong>Parameter Forest Plots</strong>.</p>
+
+        <h3>1. Posterior Predictive Check (PPC)</h3>
+        <figure>
+            <img src="output_file_diag_ppc.png" alt="Posterior Predictive Check">
+            <figcaption>Figure 9: Posterior Predictive Check. The black line represents the observed data anchors
+                (log-scale), and the blue lines are 10,000 samples drawn from the model's posterior. The tight overlap
+                indicates that our model has successfully captured the underlying structure of the data it was trained
+                on.</figcaption>
+        </figure>
+
+        <h3>2. Parameter Forest Plot</h3>
+        <figure>
+            <img src="output_file_diag_forest.png" alt="Parameter Forest Plot">
+            <figcaption>Figure 10: Parameter Forest Plot. This chart shows the 94% High Density Intervals (HDI) for the
+                core latent variables. The narrow ranges for $\beta_{gender}$ and the $\mu$ base values indicate high
+                confidence in our estimates given the provided data anchors.</figcaption>
+        </figure>
+
+        <h2>7. Interactive Calculators</h2>
 
         <p>Based on the fitted parameters from the simulation (Casual $\approx$ 450 miles/yr, Dedicated
             $\approx$ 2,200
@@ -551,7 +573,7 @@
             <p id="percContext" style="text-align:center; font-size:1rem; color:#6b7280; margin-top:1rem;"></p>
         </div>
 
-        <h2>7. Conclusion</h2>
+        <h2>8. Conclusion</h2>
 
         <p>The difference between the Casual and Dedicated outcomes is driven less by pace than by persistence.
             A
@@ -563,7 +585,7 @@
             nature of the activity. Longevity and consistency are not just adjuncts to performance; they are the
             primary determinants of total lifetime output.</p>
 
-        <h2>8. Data Sources</h2>
+        <h2>9. Data Sources</h2>
         <ul style="font-size: 0.95rem; color: #475569;">
             <li><strong>Bureau of Labor Statistics:</strong> <a href="https://www.bls.gov/news.release/atus.t01.htm"
                     target="_blank">American Time Use
@@ -587,125 +609,125 @@
 
         // [DATA_INJECTION_START]
         const WEIGHTS = {"non": 0.6, "casual": 0.25, "rec": 0.1, "ded": 0.05};
-        const BETA_GENDER = 0.4087;
+        const BETA_GENDER = 0.4078;
         const modelData = {
             "16": {
                         "c": [
-                                    376,
-                                    147
+                                    377,
+                                    149
                         ],
                         "r": [
-                                    1131,
-                                    438
+                                    1127,
+                                    435
                         ],
                         "d": [
                                     1838,
-                                    344
+                                    340
                         ]
                     },
             "20": {
                         "c": [
-                                    696,
-                                    431
+                                    698,
+                                    433
                         ],
                         "r": [
-                                    3016,
-                                    1732
+                                    3005,
+                                    1724
                         ],
                         "d": [
                                     6944,
-                                    2350
+                                    2349
                         ]
                     },
             "30": {
                         "c": [
-                                    1145,
-                                    798
+                                    1148,
+                                    800
                         ],
                         "r": [
-                                    7288,
-                                    4115
+                                    7260,
+                                    4098
                         ],
                         "d": [
-                                    20269,
-                                    7623
+                                    20272,
+                                    7622
                         ]
                     },
             "40": {
                         "c": [
-                                    1769,
-                                    1129
+                                    1774,
+                                    1133
                         ],
                         "r": [
-                                    15468,
-                                    5159
+                                    15408,
+                                    5137
                         ],
                         "d": [
-                                    30945,
-                                    12008
+                                    30950,
+                                    12009
                         ]
                     },
             "50": {
                         "c": [
-                                    2180,
-                                    1450
+                                    2186,
+                                    1455
                         ],
                         "r": [
-                                    22876,
-                                    5961
+                                    22787,
+                                    5936
                         ],
                         "d": [
-                                    41795,
-                                    12143
+                                    41801,
+                                    12142
                         ]
                     },
             "60": {
                         "c": [
-                                    2277,
-                                    1597
+                                    2284,
+                                    1602
                         ],
                         "r": [
-                                    26907,
-                                    7602
+                                    26802,
+                                    7571
                         ],
                         "d": [
-                                    47019,
+                                    47025,
                                     13129
                         ]
                     },
             "70": {
                         "c": [
-                                    2293,
-                                    1632
+                                    2299,
+                                    1637
                         ],
                         "r": [
-                                    28417,
-                                    8844
+                                    28307,
+                                    8808
                         ],
                         "d": [
-                                    48745,
-                                    14185
+                                    48752,
+                                    14184
                         ]
                     },
             "80": {
                         "c": [
-                                    2295,
-                                    1640
+                                    2301,
+                                    1645
                         ],
                         "r": [
-                                    28828,
-                                    9408
+                                    28716,
+                                    9369
                         ],
                         "d": [
-                                    49187,
-                                    14650
+                                    49194,
+                                    14649
                         ]
                     }
         };
         const FIG_STATS = {
             "age60": {
                         "casualMode": 1081,
-                        "recreationalMode": 28588,
+                        "recreationalMode": 28468,
                         "dedicatedMode": 43843
                     }
         };

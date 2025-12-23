@@ -54,13 +54,13 @@ def build_lifetime_model(config):
 
         # --- 4. Likelihood / Observations ---
         mu_casual_mixed = mu_casual_base + 0.5 * beta_gender
-        pm.Normal('obs_cas_genz', mu=mu_casual_mixed, sigma=0.2, observed=np.log(config.DATA_CASUAL_GENZ))
-        pm.Normal('obs_cas_older', mu=mu_casual_mixed, sigma=0.2, observed=np.log(config.DATA_CASUAL_OLDER))
+        pm.Normal('obs_cas_genz', mu=mu_casual_mixed, sigma=0.2, observed=np.array([np.log(config.DATA_CASUAL_GENZ)]))
+        pm.Normal('obs_cas_older', mu=mu_casual_mixed, sigma=0.2, observed=np.array([np.log(config.DATA_CASUAL_OLDER)]))
         
-        pm.Normal('obs_rec_female', mu=mu_rec_base, sigma=0.2, observed=np.log(config.DATA_REC_FEMALE))
+        pm.Normal('obs_rec_female', mu=mu_rec_base, sigma=0.2, observed=np.array([np.log(config.DATA_REC_FEMALE)]))
         
-        pm.Normal('obs_ded_male', mu=mu_ded_base + beta_gender, sigma=0.2, observed=np.log(config.DATA_DED_MALE_MAR))
-        pm.Normal('obs_ded_mixed', mu=mu_ded_base + 0.5 * beta_gender, sigma=0.2, observed=np.log(config.DATA_DED_MIXED))
+        pm.Normal('obs_ded_male', mu=mu_ded_base + beta_gender, sigma=0.2, observed=np.array([np.log(config.DATA_DED_MALE_MAR)]))
+        pm.Normal('obs_ded_mixed', mu=mu_ded_base + 0.5 * beta_gender, sigma=0.2, observed=np.array([np.log(config.DATA_DED_MIXED)]))
 
         # --- 5. The "Herron Limit" Constraint ---
         # NOTE: Camille Herron reached 100k by age 40. She is female, so the 
@@ -73,12 +73,13 @@ def build_lifetime_model(config):
     
     return model
 
-def run_mcmc(config, draws=1000, tune=500):
+def run_mcmc(config, draws=5000, tune=1000):
     """Runs MCMC sampling and returns inference data."""
     print("Building and sampling PyMC Model...")
     model = build_lifetime_model(config)
     with model:
         idata = pm.sample(draws=draws, tune=tune, chains=2, cores=1, return_inferencedata=True, progressbar=False)
+        pm.sample_posterior_predictive(idata, extend_inferencedata=True, progressbar=False)
     
     summary = az.summary(idata, round_to=3)
     print("\nMCMC Complete. Parameter Summary:")
@@ -472,6 +473,35 @@ def plot_spaghetti(sim_results, medians):
     plt.tight_layout()
     plt.savefig('output_file_spaghetti.png')
 
+def plot_diagnostics(idata):
+    """Generates Figure 9 & 10: Model Diagnostics (PPC and Forest Plot)."""
+    # 1. Posterior Predictive Check (Manual for better control over scalar observed data)
+    obs_vars = list(idata.observed_data.data_vars)
+    fig, axes = plt.subplots(len(obs_vars), 1, figsize=(10, 4 * len(obs_vars)))
+    if len(obs_vars) == 1: axes = [axes]
+    
+    for i, var in enumerate(obs_vars):
+        obs_val = idata.observed_data[var].values[0]
+        pp_samples = idata.posterior_predictive[var].values.flatten()
+        
+        sns.kdeplot(pp_samples, ax=axes[i], label='Posterior Predictive Samples', fill=True, color='#3498db', alpha=0.4)
+        axes[i].axvline(obs_val, color='#e74c3c', linestyle='--', linewidth=2, label=f'Observed Anchor ({obs_val:.2f})')
+        axes[i].set_title(f"PPC Check: {var}")
+        axes[i].set_xlabel("Log(Annual Miles)")
+        axes[i].legend(loc='upper left')
+    
+    plt.tight_layout()
+    plt.savefig('output_file_diag_ppc.png')
+    plt.close()
+    
+    # 2. Forest Plot
+    plt.figure(figsize=(10, 6))
+    az.plot_forest(idata, var_names=['beta_gender', 'mu_casual_base', 'mu_rec_base', 'mu_ded_base'], combined=True)
+    plt.title("Figure 10: Parameter Forest Plot (94% HDI)")
+    plt.grid(True, linestyle='--', alpha=0.3)
+    plt.tight_layout()
+    plt.savefig('output_file_diag_forest.png')
+
 # ==========================================
 # 4. DATA EXPORT & HTML UPDATE
 # ==========================================
@@ -538,6 +568,7 @@ def main():
     plot_gantt(sim_results)
     plot_scatter(sim_results)
     plot_spaghetti(sim_results, medians)
+    plot_diagnostics(idata)
     
     print("Exporting data to HTML...")
     model_data = get_export_data(sim_results)
