@@ -13,26 +13,34 @@ import matplotlib.ticker as ticker
 print("Initializing Data Anchors...")
 
 # --- DATA SOURCES (DISTRIBUTIONAL SKELETON) ---
-# 1. Casual (Strava 2024 mixed)
-DATA_CASUAL_GENZ = 6.0 * 52      # ~312 mi/yr
-DATA_CASUAL_BOOMER = 9.0 * 52    # ~468 mi/yr
+# 1. Casual (Strava 12th Annual Year in Sport / Dec 2025)
+# Note: Strava highlights "Beginner" (26%) and "Intermediate" (34%) tiers.
+# Gen Z median frequency/volume remains low compared to Older cohorts.
+DATA_CASUAL_GENZ = 5.0 * 52      # ~260 mi/yr (Reflecting beginner/inconsistent start)
+DATA_CASUAL_OLDER = 8.5 * 52     # ~442 mi/yr (Reflecting older casual consistency)
 
-# 2. Recreational (Female Anchor)
-# Source: Female <21km racers avg ~16.8 mpw
-DATA_REC_FEMALE = 16.8 * 52      # ~874 mi/yr
+# 2. Recreational (RunRepeat 2025 / Female Anchor)
+# RunRepeat 2025 highlights improved finish times (4:51 avg for women).
+# We maintain the mpw anchor but align with the 41% female marathoner participation.
+DATA_REC_FEMALE = 17.5 * 52      # ~910 mi/yr
 
-# 3. Dedicated / Core (Mixed & Male Anchors)
-DATA_REC_MAL_MAR = 37.0 * 52     # ~1924 mi/yr (Male Marathoner)
-DATA_CORE_USA = 35.0 * 52        # ~1820 mi/yr (Running USA Core - aligned with text)
-DATA_COMPETITIVE_TAIL = 50 * 52  # ~2600 mi/yr (Sub-3 Tail)
+# 3. Dedicated (Running USA 2024 / Camille Herron Tail)
+# Running USA Global Survey participants are active but not all elite.
+DATA_DED_MIXED = 36.5 * 52       # ~1898 mi/yr (Avg for survey participants)
+DATA_DED_MALE_MAR = 40.0 * 52    # ~2080 mi/yr (Male Marathoner specific)
 
-# 4. Gender Gap (ATUS 2024)
-# Men 23 min/day vs Women 15 min/day -> Ratio ~ 1.53
-RATIO_GENDER_ATUS = 23.0 / 15.0  
+# 4. The Herron Anchor (Extreme Tail)
+# Camille Herron hit 100,000 miles by Age 40 (April 7, 2022).
+# This provides a hard constraint on the possible accumulation for the top 0.001%.
+DATA_HERRON_40 = 100000
+
+# 5. Gender Gap (BLS ATUS 2024 results release)
+# Men 0.38 hours/day vs Women 0.25 hours/day -> Ratio ~ 1.52
+RATIO_GENDER_ATUS = 0.38 / 0.25  
 LOG_GENDER_SHIFT_PRIOR = np.log(RATIO_GENDER_ATUS) # ~0.42
 
-# Population Weights (Latent Mixture)
-# Expanding to 3 components: Casual, Recreational, Dedicated
+# Population Weights (RunRepeat 2025 / Running USA)
+# segments remain but individual trajectories are now the focus.
 P_NON = 0.60
 P_CASUAL = 0.25
 P_REC = 0.10
@@ -48,23 +56,13 @@ print("Building PyMC Model...")
 
 with pm.Model() as lifetime_model:
     # --- 1. Gender Factor ---
-    # We model a latent "Male Shift" beta_gender. 
-    # mu_female = mu_base
-    # mu_male = mu_base + beta_gender
-    # mu_mixed = mu_base + 0.5 * beta_gender (Assuming rough 50/50 split in mixed surveys)
-    
+    # Log-scale multiplier for male vs female volume
     beta_gender = pm.Normal('beta_gender', mu=LOG_GENDER_SHIFT_PRIOR, sigma=0.1)
 
     # --- 2. Latent Medians (Female Base - Log Scale) ---
-    
-    # Casual: Base around 300-500
-    mu_casual_base = pm.Normal('mu_casual_base', mu=np.log(300), sigma=0.8)
-    
-    # Recreational: Base around 800-1000
-    mu_rec_base = pm.Normal('mu_rec_base', mu=np.log(800), sigma=0.5)
-    
-    # Dedicated: Base around 1500+
-    mu_ded_base = pm.Normal('mu_ded_base', mu=np.log(1400), sigma=0.5)
+    mu_casual_base = pm.Normal('mu_casual_base', mu=np.log(400), sigma=0.8)
+    mu_rec_base = pm.Normal('mu_rec_base', mu=np.log(850), sigma=0.5)
+    mu_ded_base = pm.Normal('mu_ded_base', mu=np.log(1800), sigma=0.5)
 
     # --- 3. Sigmas (Log Scale Widths) ---
     sigma_casual = pm.HalfNormal('sigma_casual', sigma=0.5)
@@ -73,48 +71,37 @@ with pm.Model() as lifetime_model:
 
     # --- 4. Likelihood / Observations ---
     
-    # Casual Observations (Mixed: Gen Z, Boomer)
+    # Casual Observations (Strava Gen Z & Older)
     # Model: mu_mixed = mu_casual_base + 0.5 * beta_gender
     mu_casual_mixed = mu_casual_base + 0.5 * beta_gender
     obs_cas_genz = pm.Normal('obs_cas_genz', mu=mu_casual_mixed, sigma=0.2, observed=np.log(DATA_CASUAL_GENZ))
-    obs_cas_boom = pm.Normal('obs_cas_boom', mu=mu_casual_mixed, sigma=0.2, observed=np.log(DATA_CASUAL_BOOMER))
+    obs_cas_older = pm.Normal('obs_cas_older', mu=mu_casual_mixed, sigma=0.2, observed=np.log(DATA_CASUAL_OLDER))
     
     # Recreational Observations
-    # 1. Female Anchor (Rec Female) -> Pure mu_rec_base
+    # 1. Female Anchor (Rec Female / RunRepeat 2025) -> Pure mu_rec_base
     obs_rec_female = pm.Normal('obs_rec_female', mu=mu_rec_base, sigma=0.2, observed=np.log(DATA_REC_FEMALE))
     
     # Dedicated Observations
-    # 1. Male Marathoner -> mu_ded_base + beta_gender
-    obs_ded_male = pm.Normal('obs_ded_male', mu=mu_ded_base + beta_gender, sigma=0.2, observed=np.log(DATA_REC_MAL_MAR))
+    # 1. Male Marathoner (RunRepeat 2025) -> mu_ded_base + beta_gender
+    obs_ded_male = pm.Normal('obs_ded_male', mu=mu_ded_base + beta_gender, sigma=0.2, observed=np.log(DATA_DED_MALE_MAR))
     
-    # 2. Running USA Core (Mixed) -> mu_ded_base + 0.5 * beta_gender
-    obs_ded_mixed = pm.Normal('obs_ded_mixed', mu=mu_ded_base + 0.5 * beta_gender, sigma=0.2, observed=np.log(DATA_CORE_USA))
+    # 2. Running USA Survey (Mixed) -> mu_ded_base + 0.5 * beta_gender
+    obs_ded_mixed = pm.Normal('obs_ded_mixed', mu=mu_ded_base + 0.5 * beta_gender, sigma=0.2, observed=np.log(DATA_DED_MIXED))
 
-    # --- 5. Tail Constraints ---
-    # A. Annual Competitiveness
-    # 97% of Dedicated Mixed should be around DATA_COMPETITIVE_TAIL (Annual)
-    target_z = 2.0 
-    projected_tail_annual = (mu_ded_base + 0.5 * beta_gender) + target_z * sigma_ded
-    pm.Potential('tail_constraint_annual', pm.logp(pm.Normal.dist(mu=projected_tail_annual, sigma=0.2), np.log(DATA_COMPETITIVE_TAIL)))
-
-    # B. The Herron Limit (Retention / Lifetime)
-    # We model the duration (years) for Dedicated runners
-    # Prior: Approx 30 years average duration for a "Lifer"
-    mu_duration_ded = pm.Normal('mu_duration_ded', mu=30, sigma=5) 
+    # --- 5. The "Herron Limit" Constraint ---
+    # Camille Herron hit 100k by age 40.
+    # We model the lifetime total at age 40 for the Dedicated 99.9th percentile.
+    # Cumulative = Annual_Base * 24 (assuming start at 16, no decline early)
+    # Log(Cumulative) = Log(Annual_Base) + Log(24)
+    # The Herron limit is an upper bound on what is humanly possible.
     
-    # 40-year-old high-volume runner (Age 16 to 56? No, by Age 40 means 24 years of running)
-    # The Herron Constraint usually applies to the EXTREME tail hitting 100k by Age 40.
-    # Let's simplify: A "Full Lifetime" (say 50 years) * "Elite Volume" should be bounded.
-    # Or, the 99.9th percentile of Lifetime Total shouldn't easily exceed 150k.
-    # Let's use the explicit Blog Post claim: "Penalty if tail at Age 40 > 100k"
-    # Duration at Age 40 (assuming started at 16) = 24 years.
-    # Annual Tail = exp(projected_tail_annual) ~ 2600. 2600 * 24 = 62k. Safe.
-    # But if variables drift high, we penalize.
+    target_z_herron = 3.0 # Top 0.1%
+    projected_tail_annual_ded = (mu_ded_base + beta_gender) + target_z_herron * sigma_ded
+    lifetime_tail_40 = projected_tail_annual_ded + np.log(24) 
     
-    lifetime_tail_40 = projected_tail_annual + np.log(24) # Log Sum = Product
-    # We want P(lifetime > 100k) to be small.
-    # Soft Soft Constraint: Expect the tail to be BELOW log(100,000)
-    pm.Potential('herron_limit', pm.logcdf(pm.Normal.dist(mu=lifetime_tail_40, sigma=0.5), np.log(100000)))
+    # Constraint: P(Lifetime Total > 100k) should be small for the tail.
+    # We set a Potential that penalizes if the tail exceeds 100k.
+    pm.Potential('herron_limit_potential', pm.logcdf(pm.Normal.dist(mu=lifetime_tail_40, sigma=0.3), np.log(DATA_HERRON_40)))
 
 # ==========================================
 # 3. MCMC SAMPLING
@@ -128,6 +115,7 @@ print("MCMC Complete. Parameter Summary:")
 print(summary)
 
 # Extract Parameters
+# Extract Parameters
 BETA_GENDER = summary.loc['beta_gender', 'mean']
 MU_C_BASE = summary.loc['mu_casual_base', 'mean']
 SIG_C = summary.loc['sigma_casual', 'mean']
@@ -135,35 +123,39 @@ MU_R_BASE = summary.loc['mu_rec_base', 'mean']
 SIG_R = summary.loc['sigma_rec', 'mean']
 MU_D_BASE = summary.loc['mu_ded_base', 'mean']
 SIG_D = summary.loc['sigma_ded', 'mean']
-DUR_D_MEAN = summary.loc['mu_duration_ded', 'mean']
 
 print(f"\n--- Model Insights ---")
 print(f"Gender Multiplier: {np.exp(BETA_GENDER):.2f}x (Males vs Females)")
 print(f"Casual Base (F): {np.exp(MU_C_BASE):.0f} mi/yr")
 print(f"Rec Base (F):    {np.exp(MU_R_BASE):.0f} mi/yr")
 print(f"Ded Base (F):    {np.exp(MU_D_BASE):.0f} mi/yr")
-print(f"Ded Duration:    {DUR_D_MEAN:.1f} yrs (avg)")
 
 # ==========================================
-# 4. SIMULATION (For Visuals)
+# 4. SIMULATION (Trajectory-Based)
 # ==========================================
-# We simulate a "Mixed" population for the static charts
-# Mixed Mu = Base + 0.5 * Beta
-
-print(f"Simulating {N_SIM} Mixed Lifetimes...")
+print(f"Simulating {N_SIM} Individual Trajectories...")
 np.random.seed(42)
+
+def get_decline_factor(age):
+    """
+    Age-dependent decline curve:
+    - Stable until 45
+    - ~1.5% annual decline thereafter
+    """
+    if age <= 45: return 1.0
+    return np.exp(-0.015 * (age - 45))
 
 # Groups: 0=Non, 1=Casual, 2=Rec, 3=Ded
 groups = np.random.choice([0, 1, 2, 3], size=N_SIM, p=[P_NON, P_CASUAL, P_REC, P_DEDICATED])
 annual_miles = np.zeros((N_SIM, 81)) 
 
-# Parameters (Mixed)
+# Parameters (Mixed Population for Averages)
 MU_C_MIXED = MU_C_BASE + 0.5 * BETA_GENDER
 MU_R_MIXED = MU_R_BASE + 0.5 * BETA_GENDER
 MU_D_MIXED = MU_D_BASE + 0.5 * BETA_GENDER
 
 # --- Helper to generate lifecycles ---
-def generate_lifecycle(n, start_mu, start_std, dur_mu, dur_std, miles_mu, miles_sig, intermittency):
+def generate_lifecycle(n, start_mu, start_std, dur_mu, dur_std):
     starts = np.random.normal(start_mu, start_std, n)
     durs = np.random.gamma(dur_mu, dur_std, n)
     stops = starts + durs
@@ -171,37 +163,31 @@ def generate_lifecycle(n, start_mu, start_std, dur_mu, dur_std, miles_mu, miles_
 
 # Casual
 idx_c = np.where(groups == 1)[0]
-starts_c, stops_c = generate_lifecycle(len(idx_c), 28, 6, 2, 5, MU_C_MIXED, SIG_C, 0.65)
+starts_c, stops_c = generate_lifecycle(len(idx_c), 28, 6, 2, 5)
 
 # Rec
 idx_r = np.where(groups == 2)[0]
-starts_r, stops_r = generate_lifecycle(len(idx_r), 24, 5, 8, 4, MU_R_MIXED, SIG_R, 0.80)
+starts_r, stops_r = generate_lifecycle(len(idx_r), 24, 5, 8, 4)
 
 # Dedicated
 idx_d = np.where(groups == 3)[0]
 is_early = np.random.rand(len(idx_d)) < 0.60
-starts_d_early = np.random.normal(16, 2, np.sum(is_early))
-starts_d_late = np.random.normal(30, 5, np.sum(~is_early))
-starts_d = np.concatenate([starts_d_early, starts_d_late]) # Naive concat, random order doesn't matter for idx
-# fix order
 starts_d = np.zeros(len(idx_d))
-starts_d[is_early] = starts_d_early
-starts_d[~is_early] = starts_d_late
-
-# Use inferred duration from PyMC
-# DUR_D_MEAN ~ 30. Let's use Gamma(k, theta) where k*theta = mean.
-# shape=10 gives reasonable variance. theta = mean/10.
-durs_d = np.random.gamma(10, DUR_D_MEAN/10.0, len(idx_d))
+starts_d[is_early] = np.random.normal(16, 2, np.sum(is_early))
+starts_d[~is_early] = np.random.normal(30, 5, np.sum(~is_early))
+durs_d = np.random.gamma(10, 3.0, len(idx_d)) # ~30 year avg duration
 stops_d = starts_d + durs_d
 
 def fill_miles(indices, starts, stops, mu_log, sigma_log, intermittency_prob):
     for age in range(16, 81):
         active_mask = (age >= starts) & (age <= stops)
-        # Intermittency check (annual probability of running given active phase)
         is_running_year = np.random.rand(len(indices)) < intermittency_prob
         active_idx = indices[active_mask & is_running_year]
         if len(active_idx) > 0:
-            annual_miles[active_idx, age] = np.random.lognormal(mu_log, sigma_log, len(active_idx))
+            # Apply decline factor
+            decline = get_decline_factor(age)
+            # Sample log-normal then scale by decline
+            annual_miles[active_idx, age] = np.random.lognormal(mu_log, sigma_log, len(active_idx)) * decline
 
 fill_miles(idx_c, starts_c, stops_c, MU_C_MIXED, SIG_C, 0.6)
 fill_miles(idx_r, starts_r, stops_r, MU_R_MIXED, SIG_R, 0.8)
@@ -215,31 +201,14 @@ cumulative = np.cumsum(annual_miles, axis=1)
 print("\n--- JSON FOR INDEX.HTML (Start Copy) ---")
 print("const modelData = {")
 ages_to_export = [16, 20, 30, 40, 50, 60, 70, 80]
-
 for age in ages_to_export:
-    # Get cumulative miles for each group at this age
-    c_vals = cumulative[idx_c, age]
-    r_vals = cumulative[idx_r, age]
-    d_vals = cumulative[idx_d, age]
+    c_active = cumulative[idx_c, age]
+    c_active = c_active[c_active > 10]
+    r_active = cumulative[idx_r, age]
+    r_active = r_active[r_active > 10]
+    d_active = cumulative[idx_d, age]
+    d_active = d_active[d_active > 10]
     
-    # Filter for "Active" (having some minimal mileage to fit the log-normal)
-    # Since we use weights in the JS, standard practice is to model the distribution of the *group* 
-    # but the log-normal fit really only works on the positive values.
-    # The JS `logNormCDF` assumes the input (Mean/Std) matches the data.
-    
-    # We'll compute the mean/std of the POSITIVE (>10 miles) members of each group.
-    # The "Intermittency" or "Non-Start" is handled by the group weights (Pi) 
-    # OR we can assume the group is "conditional on being a runner of that type".
-    # In the JS, we sum: W_C * CDF_C + W_R * CDF_R + W_D * CDF_D
-    # So CDF_C should represent the distribution of a random Casual runner.
-    # If a Casual runner has 0 miles at age 30 (not started), they are at 0.
-    # SimpleMean/Std works best if we treat the "Active" distribution.
-    
-    c_active = c_vals[c_vals > 10]
-    r_active = r_vals[r_vals > 10]
-    d_active = d_vals[d_vals > 10] # Dedicated rarely 0 if started, but safety first
-    
-    # helper
     def get_stats(arr):
         if len(arr) == 0: return 0, 0
         return np.mean(arr), np.std(arr)
@@ -247,11 +216,12 @@ for age in ages_to_export:
     mc, sc = get_stats(c_active)
     mr, sr = get_stats(r_active)
     md, sd = get_stats(d_active)
-
     print(f"    {age}: {{ c: [{mc:.0f}, {sc:.0f}], r: [{mr:.0f}, {sr:.0f}], d: [{md:.0f}, {sd:.0f}] }},")
 
 print("};")
 print(f"const WEIGHTS = {{ non: {P_NON}, casual: {P_CASUAL}, rec: {P_REC}, ded: {P_DEDICATED} }};")
+print(f"const BETA_GENDER = {BETA_GENDER:.2f};")
+print("--- JSON FOR INDEX.HTML (End Copy) ---\n")
 print("--- JSON FOR INDEX.HTML (End Copy) ---\n")
 
 # ==========================================
@@ -567,13 +537,12 @@ plt.savefig('output_file_gantt.png')
 print("Generating Scatter Plot...")
 plt.figure(figsize=(10, 6))
 
-# Sub-sample for scatter to avoid clutter (e.g. 2000 points)
 n_scatter = 2000
 scatter_idx = np.random.choice(N_SIM, n_scatter, replace=False)
 
 x_vals = []
 y_vals = []
-colors = []
+colors_scatter = []
 
 for i in scatter_idx:
     g = groups[i]
@@ -584,26 +553,52 @@ for i in scatter_idx:
     elif g == 3: c = '#e74c3c'
     else: c = 'grey'
     
-    # Calculate Active Years (Logic from consistency block)
-    # We need to reach into the annual_miles array
     miles = annual_miles[i]
-    active_years = np.sum(miles > 1) # Tolerance
+    active_years = np.sum(miles > 1) 
     total_miles = np.sum(miles)
     
     x_vals.append(active_years)
     y_vals.append(total_miles)
-    colors.append(c)
+    colors_scatter.append(c)
 
-plt.scatter(x_vals, y_vals, c=colors, alpha=0.6, s=15, edgecolors='none')
-
+plt.scatter(x_vals, y_vals, c=colors_scatter, alpha=0.6, s=15, edgecolors='none')
 plt.xlabel("Total Active Years")
 plt.ylabel("Lifetime Miles")
-plt.title("Figure 7: The Persistence Multiplier")
-plt.yscale('linear') # Linear to show the "Curve" or lack thereof
-# Add trend lines? No, the color clusters tell the story.
-
-# Legend
+plt.title("Figure 7: The Persistence Multiplier (Trajectory Clusters)")
 plt.legend(custom_lines, ['Casual', 'Recreational', 'Dedicated'], loc='upper left')
 plt.grid(True, linestyle='--', alpha=0.3)
 plt.tight_layout()
 plt.savefig('output_file_scatter.png')
+
+# --- Plot 8: Spaghetti Plot (Individual Trajectories) ---
+print("Generating Spaghetti Plot...")
+plt.figure(figsize=(10, 6))
+
+n_spaghetti = 100 # Sample paths
+spaghetti_idx = np.random.choice(active_indices, min(n_spaghetti, len(active_indices)), replace=False)
+
+for i in spaghetti_idx:
+    g = groups[i]
+    if g == 1: c = '#2ecc71'
+    elif g == 2: c = '#f1c40f'
+    elif g == 3: c = '#e74c3c'
+    
+    # Plot cumulative path
+    plt.plot(np.arange(16, 81), cumulative[i, 16:81], color=c, alpha=0.3, linewidth=1)
+
+# Add class medians for reference
+plt.plot(np.arange(16, 81), medians_c, color='#1b5e20', linewidth=3, label='Casual Median')
+plt.plot(np.arange(16, 81), medians_r, color='#f57f17', linewidth=3, label='Recreational Median')
+plt.plot(np.arange(16, 81), medians_d, color='#b71c1c', linewidth=3, label='Dedicated Median')
+
+plt.xlabel("Age")
+plt.ylabel("Cumulative Miles")
+plt.title("Figure 8: Individual Lifecycles (Spaghetti Plot)")
+plt.legend()
+plt.grid(True, linestyle='--', alpha=0.4)
+ax = plt.gca()
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f'{int(x/1000)}k'))
+plt.tight_layout()
+plt.savefig('output_file_spaghetti.png')
+
+print("Done. Saved all outputs including output_file_spaghetti.png.")

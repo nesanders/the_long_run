@@ -37,18 +37,15 @@ The workflow followed an iterative loop:
 
 ## Data Sources & Methodology
 
-This model is constrained by a "distributional skeleton" of real-world data points, rather than a single theoretical curve. Explicit anchors include:
+This model is constrained by a "distributional skeleton" of real-world data points, synthesizing findings from multiple authoritative sources:
 
-*   **Strava Year in Sport 2024**: Used to constrain the "Casual" runner demographics.
-    *   *Gen Z Average*: ~6 miles/week.
-    *   *Boomer Average*: ~9 miles/week.
-*   **Running USA National Runner Survey**: Used to anchor the "Dedicated" runner component.
-    *   *Core Runner Average*: 35.0 miles/week.
-*   **American Time Use Survey (ATUS) 2024**: Used to model the Gender Activity Gap.
-    *   *Observation*: Men spend ~1.5x more time on daily sports/exercise than women (23 vs 15 mins/day). This factor is modeled as a latent `beta_gender` shift in the Bayesian model.
-*   **RunRepeat & Academic Studies**: Used for race-specific recreational anchors.
-    *   *Female Short Distance (<21k)*: ~16.8 miles/week.
-    *   *Male Marathoner*: ~37 miles/week.
+- **Bureau of Labor Statistics (ATUS)**: Used to model the Gender Activity Gap based on daily time-use averages.
+- **Strava Year in Sport**: Used to anchor "Casual" runner demographics and motivation trends across generations.
+- **RunRepeat State of Running**: Used for race-specific recreational anchors and participation gender ratios.
+- **Running USA Global Runner Survey**: Used to anchor the "Dedicated" runner distribution and consistency metrics.
+- **The "Herron Limit"**: Lifetime mileage milestones (e.g., Camille Herron's 100k milestone) serve as upper-bound constraints.
+
+Detailed citations and specific metric explanations are provided in the [full analysis (index.html)](./index.html).
 
 ## Model Structure
 
