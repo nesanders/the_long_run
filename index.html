@@ -301,7 +301,6 @@
             serve as the "initial guess" before seeing the data:</p>
 
         <div class="math-block" style="text-align: left; padding-left: 2rem;">
-            \[
             \begin{aligned}
             \text{Gender Shift:} & \quad \beta_{gender} \sim \mathcal{N}(\ln(1.52), 0.1) \quad (\text{Source: <a
                 href="https://www.bls.gov/news.release/atus.t01.htm" target="_blank">ATUS 2024</a>}) \\
@@ -310,7 +309,6 @@
             \text{Dedicated Base:} & \quad \mu_{ded} \sim \mathcal{N}(\ln(1800), 0.5) \\
             \text{Variability:} & \quad \sigma_{k} \sim \mathcal{HN}(0.5)
             \end{aligned}
-            \]
         </div>
 
         <h3>2.3 Likelihoods (The Data Anchors)</h3>
@@ -352,8 +350,12 @@
         <p>Additionally, we apply a <strong>"Herron Limit" Potential</strong>: Camille Herron's achievement of reaching
             <strong>100,000 miles by Age 40</strong> (Source: <a href="https://en.wikipedia.org/wiki/Camille_Herron"
                 target="_blank">Wikipedia</a>) serves as a Bayesian constraint on the extreme tail of the Dedicated
-            distribution.
+            distribution. Mathematically, this is implemented as a log-likelihood penalty on the tail parameter:
         </p>
+        <div class="math-block">
+            $$ \ln L_{Herron} = \text{logCDF}(\mathcal{N}(\mu_{ded, 40}, \sigma_{ded}^2), \ln(100,000)) $$
+        </div>
+        <p>Where $\mu_{ded, 40}$ is the projected median accumulation for a dedicated runner at age 40.</p>
 
         <h2>3. The Accumulation function $\mu(t)$</h2>
         <p>Lifetime mileage is not a static number; it is a time-series accumulation. To simulate this, we use a
@@ -449,8 +451,8 @@
         <figure>
             <img src="output_file_annual_dist.png" alt="Annual Volume Distributions">
             <figcaption>Figure 5: The Annual "Brick" distribution. Before accumulation, these are the
-                probabilities of annual volume. Casual runners Center at ~450 miles/year, while Dedicated
-                runners are an order of magnitude higher at ~2,200 miles/year.</figcaption>
+                probabilities of annual volume. Casual runners center at ~450 miles/year, while Dedicated
+                runners are nearly <strong>5x higher</strong> at ~2,200 miles/year.</figcaption>
         </figure>
 
         <h3>2. The "Career Arc": Lifecycles</h3>
@@ -583,33 +585,131 @@
     <script>
         // --- JS LOGIC FOR CALCULATORS ---
 
-        // Fitted Parameters from Hierarchical Optimization
-        // Updated with Casual=450/yr and Dedicated=2200/yr targets
-        // Structure: Age: { c: [Mean, Std], s: [Mean, Std] }
-        const W_NON = 0.60;
-        const W_CASUAL = 0.25;
-        const W_REC = 0.10;
-        const W_DEDICATED = 0.05;
-
-        // Cumulative Mileage Stats (Mean, StdDev) for Active Members of each group at various ages
-        // Derived from PyMC Trajectory Simulation
+        // [DATA_INJECTION_START]
+        const WEIGHTS = {"non": 0.6, "casual": 0.25, "rec": 0.1, "ded": 0.05};
+        const BETA_GENDER = 0.3956;
         const modelData = {
-            16: { c: [397, 167], r: [1222, 547], d: [1798, 218] },
-            20: { c: [717, 441], r: [2995, 1784], d: [6863, 2199] },
-            30: { c: [1168, 825], r: [7196, 4103], d: [19822, 7607] },
-            40: { c: [1785, 1139], r: [15374, 5073], d: [30383, 11835] },
-            50: { c: [2191, 1448], r: [22748, 5869], d: [40940, 12015] },
-            60: { c: [2289, 1597], r: [26685, 7485], d: [46192, 12844] },
-            70: { c: [2306, 1638], r: [28183, 8708], d: [47954, 13735] },
-            80: { c: [2308, 1645], r: [28592, 9222], d: [48396, 14212] },
+            "16": {
+                        "c": [
+                                    394,
+                                    168
+                        ],
+                        "r": [
+                                    1224,
+                                    557
+                        ],
+                        "d": [
+                                    1794,
+                                    226
+                        ]
+                    },
+            "20": {
+                        "c": [
+                                    712,
+                                    439
+                        ],
+                        "r": [
+                                    3000,
+                                    1792
+                        ],
+                        "d": [
+                                    6846,
+                                    2197
+                        ]
+                    },
+            "30": {
+                        "c": [
+                                    1159,
+                                    820
+                        ],
+                        "r": [
+                                    7206,
+                                    4115
+                        ],
+                        "d": [
+                                    19774,
+                                    7592
+                        ]
+                    },
+            "40": {
+                        "c": [
+                                    1771,
+                                    1132
+                        ],
+                        "r": [
+                                    15396,
+                                    5091
+                        ],
+                        "d": [
+                                    30309,
+                                    11810
+                        ]
+                    },
+            "50": {
+                        "c": [
+                                    2174,
+                                    1438
+                        ],
+                        "r": [
+                                    22781,
+                                    5891
+                        ],
+                        "d": [
+                                    40840,
+                                    11991
+                        ]
+                    },
+            "60": {
+                        "c": [
+                                    2271,
+                                    1585
+                        ],
+                        "r": [
+                                    26723,
+                                    7509
+                        ],
+                        "d": [
+                                    46080,
+                                    12818
+                        ]
+                    },
+            "70": {
+                        "c": [
+                                    2287,
+                                    1626
+                        ],
+                        "r": [
+                                    28223,
+                                    8731
+                        ],
+                        "d": [
+                                    47838,
+                                    13707
+                        ]
+                    },
+            "80": {
+                        "c": [
+                                    2289,
+                                    1634
+                        ],
+                        "r": [
+                                    28633,
+                                    9246
+                        ],
+                        "d": [
+                                    48279,
+                                    14183
+                        ]
+                    }
         };
-        const WEIGHTS = { non: 0.6, casual: 0.25, rec: 0.1, ded: 0.05 };
-        const BETA_GENDER = 0.40; // Log-scale shift derived from PyMC model
-
-        // Generated from Python Script
         const FIG_STATS = {
-            age60: { casualMode: 1201, recMode: 26786, dedMode: 44204 }
+            "age60": {
+                        "casualMode": 1201,
+                        "recMode": 26786,
+                        "dedMode": 44084
+                    }
         };
+        // [DATA_INJECTION_END]
 
         function onPageLoad() {
             // Update Figure 1 Caption with Exact Stats
@@ -618,18 +718,30 @@
         }
         window.onload = onPageLoad;
 
-        // Math Helpers
+        // Math Helpers: Numerical Approximation of the Error Function (A&S 7.1.26)
         function erf(x) {
-            var m = 1.00, s = 1.00, sum = x * 1.0;
-            for (var i = 1; i < 50; i++) {
-                m *= i; s *= -1; sum += (s * Math.pow(x, 2 * i + 1)) / (m * (2 * i + 1));
-            }
-            return 2 * sum / Math.sqrt(Math.PI);
+            // save the sign of x
+            var sign = (x >= 0) ? 1 : -1;
+            x = Math.abs(x);
+
+            // constants
+            var a1 = 0.254829592;
+            var a2 = -0.284496736;
+            var a3 = 1.421413741;
+            var a4 = -1.453152027;
+            var a5 = 1.061405429;
+            var p = 0.3275911;
+
+            // A&S formula 7.1.26
+            var t = 1.0 / (1.0 + p * x);
+            var y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+
+            return sign * y;
         }
 
         function normCDF(x, mean, std) {
             if (std === 0) return x < mean ? 0 : 1;
-            return 0.5 * (1 + erf((x - mean) / (Math.sqrt(2) * std)));
+            return 0.5 * (1 + erf((x - mean) / (std * Math.sqrt(2))));
         }
 
         function logNormCDF(x, mean_linear, std_linear) {
@@ -708,20 +820,27 @@
 
             // Adjust Means based on Gender
             // Model Data is "Mixed" (Base + 0.5 Beta)
-            // Female = Mixed - 0.5 Beta
-            // Male = Mixed + 0.5 Beta
-            let shift = 0;
-            if (gender === 'female') shift = -0.5 * BETA_GENDER;
-            if (gender === 'male') shift = 0.5 * BETA_GENDER;
+            // Linear Mean Multiplier: 
+            // Male Multiplier = exp(0.5 * BETA_GENDER)
+            // Female Multiplier = exp(-0.5 * BETA_GENDER)
+            let mult = 1.0;
+            if (gender === 'female') mult = Math.exp(-0.5 * BETA_GENDER);
+            if (gender === 'male') mult = Math.exp(0.5 * BETA_GENDER);
+
+            const adj_p = {
+                c: [p.c[0] * mult, p.c[1] * mult],
+                r: [p.r[0] * mult, p.r[1] * mult],
+                d: [p.d[0] * mult, p.d[1] * mult]
+            };
 
             // Calculate CDF for each group
             const cdf_n = (miles > 0) ? 1.0 : 0.0;
-            const cdf_c = logNormCDF(miles, p.c[0] + shift, p.c[1]);
-            const cdf_r = logNormCDF(miles, p.r[0] + shift, p.r[1]);
-            const cdf_d = logNormCDF(miles, p.d[0] + shift, p.d[1]);
+            const cdf_c = logNormCDF(miles, adj_p.c[0], adj_p.c[1]);
+            const cdf_r = logNormCDF(miles, adj_p.r[0], adj_p.r[1]);
+            const cdf_d = logNormCDF(miles, adj_p.d[0], adj_p.d[1]);
 
             // Weighted Sum (The Mixture)
-            const totalProb = (W_NON * cdf_n) + (W_CASUAL * cdf_c) + (W_REC * cdf_r) + (W_DEDICATED * cdf_d);
+            const totalProb = (WEIGHTS.non * cdf_n) + (WEIGHTS.casual * cdf_c) + (WEIGHTS.rec * cdf_r) + (WEIGHTS.ded * cdf_d);
             const perc = (totalProb * 100);
 
             let percString = perc.toFixed(1);

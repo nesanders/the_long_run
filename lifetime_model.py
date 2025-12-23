@@ -195,34 +195,7 @@ fill_miles(idx_d, starts_d, stops_d, MU_D_MIXED, SIG_D, 0.95)
 
 cumulative = np.cumsum(annual_miles, axis=1)
 
-# ==========================================
-# 5. EXPORT FOR JS
-# ==========================================
-print("\n--- JSON FOR INDEX.HTML (Start Copy) ---")
-print("const modelData = {")
-ages_to_export = [16, 20, 30, 40, 50, 60, 70, 80]
-for age in ages_to_export:
-    c_active = cumulative[idx_c, age]
-    c_active = c_active[c_active > 10]
-    r_active = cumulative[idx_r, age]
-    r_active = r_active[r_active > 10]
-    d_active = cumulative[idx_d, age]
-    d_active = d_active[d_active > 10]
-    
-    def get_stats(arr):
-        if len(arr) == 0: return 0, 0
-        return np.mean(arr), np.std(arr)
-
-    mc, sc = get_stats(c_active)
-    mr, sr = get_stats(r_active)
-    md, sd = get_stats(d_active)
-    print(f"    {age}: {{ c: [{mc:.0f}, {sc:.0f}], r: [{mr:.0f}, {sr:.0f}], d: [{md:.0f}, {sd:.0f}] }},")
-
-print("};")
-print(f"const WEIGHTS = {{ non: {P_NON}, casual: {P_CASUAL}, rec: {P_REC}, ded: {P_DEDICATED} }};")
-print(f"const BETA_GENDER = {BETA_GENDER:.2f};")
-print("--- JSON FOR INDEX.HTML (End Copy) ---\n")
-print("--- JSON FOR INDEX.HTML (End Copy) ---\n")
+# medians_c, r, d will be defined later in Viz section
 
 # ==========================================
 # 6. VISUALIZATION (Updated for 3 components)
@@ -309,11 +282,35 @@ plt.legend()
 plt.tight_layout()
 plt.savefig('output_file_pdf_final.png')
 
-print(f"\n--- JSON FOR FIGURES (Start Copy) ---")
-print("const FIG_STATS = {")
-print(f"    age60: {{ casualMode: {int(mode_casual)}, recMode: {int(mode_rec)}, dedMode: {int(mode_ded)} }}")
-print("};")
-print("--- JSON FOR FIGURES (End Copy) ---\n")
+# ==========================================
+# 5. PREPARE EXPORT DATA
+# ==========================================
+fig_stats = {
+    'age60': {
+        'casualMode': int(mode_casual),
+        'recMode': int(mode_rec),
+        'dedMode': int(mode_ded)
+    }
+}
+
+model_data_export = {}
+ages_to_export = [16, 20, 30, 40, 50, 60, 70, 80]
+for age in ages_to_export:
+    c_active_age = cumulative[idx_c, age]
+    c_active_age = c_active_age[c_active_age > 10]
+    r_active_age = cumulative[idx_r, age]
+    r_active_age = r_active_age[r_active_age > 10]
+    d_active_age = cumulative[idx_d, age]
+    d_active_age = d_active_age[d_active_age > 10]
+    
+    def get_stats(arr):
+        if len(arr) == 0: return 0, 0
+        return np.mean(arr), np.std(arr)
+
+    mc, sc = get_stats(c_active_age)
+    mr, sr = get_stats(r_active_age)
+    md, sd = get_stats(d_active_age)
+    model_data_export[age] = { 'c': [round(mc), round(sc)], 'r': [round(mr), round(sr)], 'd': [round(md), round(sd)] }
 
 # --- CDF Plot (Age 60) ---
 plt.figure(figsize=(10, 6))
@@ -513,15 +510,21 @@ plot_data.sort(key=lambda x: (x['group'], x['duration']))
 
 y_pos = 0
 for p in plot_data:
-    plt.hlines(y=y_pos, xmin=p['start'], xmax=p['stop'], color=p['color'], linewidth=3)
-    # Optional: Dots for active years? 
-    # Too granular for 50 lines. Just the bars is good.
+    idx = p['id']
+    user_miles = annual_miles[idx]
+    
+    # Plot segments for each active year
+    for age in range(16, 81):
+        if user_miles[age] > 0:
+            # Draw a small segment for this year
+            plt.hlines(y=y_pos, xmin=age, xmax=age+1, color=p['color'], linewidth=3)
+            
     y_pos += 1
 
 plt.xlabel("Age")
 plt.yticks([])
 plt.ylabel("Individual Runners (Sample)")
-plt.title("Figure 6: Career Arcs (Sample of 50 Active Runners)")
+plt.title("Figure 6: Career Arcs (Sample showing Intermittency/Gaps)")
 # Custom Legend
 from matplotlib.lines import Line2D
 custom_lines = [Line2D([0], [0], color='#2ecc71', lw=4),
@@ -601,4 +604,39 @@ ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f'{int(x/1000)}
 plt.tight_layout()
 plt.savefig('output_file_spaghetti.png')
 
-print("Done. Saved all outputs including output_file_spaghetti.png.")
+def update_html_data(model_data, fig_stats, beta_gender, weights):
+    import json
+    import re
+    # Prepare JS content
+    js_content = f"        const WEIGHTS = {json.dumps(weights)};\n"
+    js_content += f"        const BETA_GENDER = {beta_gender:.4f};\n"
+    # Pretty-print JSON with specific indentation to match HTML
+    model_data_str = json.dumps(model_data, indent=12).replace('}', '        }')
+    fig_stats_str = json.dumps(fig_stats, indent=12).replace('}', '        }')
+    
+    js_content += f"        const modelData = {model_data_str};\n"
+    js_content += f"        const FIG_STATS = {fig_stats_str};"
+    
+    html_path = 'index.html'
+    try:
+        with open(html_path, 'r') as f:
+            content = f.read()
+        
+        pattern = r'// \[DATA_INJECTION_START\].*?// \[DATA_INJECTION_END\]'
+        replacement = f'// [DATA_INJECTION_START]\n{js_content}\n        // [DATA_INJECTION_END]'
+        
+        new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+        
+        with open(html_path, 'w') as f:
+            f.write(new_content)
+        print(f"Successfully updated {html_path} with new model parameters.")
+    except Exception as e:
+        print(f"Error updating {html_path}: {e}")
+
+if __name__ == "__main__":
+    # Final data export
+    weights = {'non': P_NON, 'casual': P_CASUAL, 'rec': P_REC, 'ded': P_DEDICATED}
+    # Capture the trace mean for beta_gender from idata
+    beta_gender_val = float(idata.posterior['beta_gender'].mean())
+    update_html_data(model_data_export, fig_stats, beta_gender_val, weights)
+    print("Done. Saved all outputs and updated index.html.")
